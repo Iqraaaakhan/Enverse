@@ -1,0 +1,25 @@
+timestamp,device_name,device_type,power_watts,duration_minutes
+2025-12-01 06:00,Bedroom Light,light,20,30
+2025-12-01 06:30,Kitchen Light,light,25,45
+2025-12-01 07:00,Ceiling Fan,fan,75,120
+2025-12-01 08:00,Electric Kettle,kitchen,1500,10
+2025-12-01 09:00,Refrigerator,appliance,200,60
+2025-12-01 10:00,Laptop Charger,appliance,65,180
+2025-12-01 12:00,Microwave Oven,kitchen,1200,15
+2025-12-01 14:00,Washing Machine,appliance,500,45
+2025-12-01 18:00,Living Room Light,light,30,180
+2025-12-01 19:00,TV,entertainment,120,120
+2025-12-01 21:00,Bedroom AC,ac,1500,180
+2025-12-01 23:30,Bedroom Fan,fan,75,240
+2025-12-02 06:00,Bedroom Light,light,20,25
+2025-12-02 07:00,Ceiling Fan,fan,75,90
+2025-12-02 08:00,Toaster,kitchen,800,8
+2025-12-02 09:00,Refrigerator,appliance,200,60
+2025-12-02 11:00,Water Heater,bathroom,2000,20
+2025-12-02 13:00,Laptop Charger,appliance,65,240
+2025-12-02 18:00,Living Room Light,light,30,150
+2025-12-02 20:00,TV,entertainment,120,150
+2025-12-02 22:00,Bedroom AC,ac,1500,210
+2025-12-03 07:00,Bathroom Light,light,25,20
+2025-12-03 09:00,Geyser,bathroom,2000,15
+2025-12-03 21:00,TV,entertainment,120,180
