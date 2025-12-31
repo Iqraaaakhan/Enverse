@@ -5,8 +5,7 @@ import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <div className="min-h-screen w-full bg-gray-950 text-gray-100">
-      <App />
-    </div>
+    {/* Removed the dark background div that was causing the black screen and layout glitches */}
+    <App />
   </React.StrictMode>
 )

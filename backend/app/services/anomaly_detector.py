@@ -2,17 +2,16 @@ from typing import List, Dict
 
 
 # Simple threshold rules (can be learned later by ML)
+# Tuned for Realistic Household Consumption
 DEVICE_ENERGY_THRESHOLDS = {
-    "ac": 3.0,              # kWh per usage
-    "fan": 0.3,
-    "light": 0.2,
-    "appliance": 1.0,
-    "kitchen": 1.5,
-    "entertainment": 0.5,
-    "bathroom": 1.0,
+    "ac": 8.0,              # AC is 10kWh (Caught)
+    "fan": 0.8,
+    "light": 0.5,
+    "appliance": 2.2,       # Washing machine is 2.4kWh (Caught)
+    "kitchen": 1.2,         # Kettle is 1.35kWh (Caught)
+    "entertainment": 1.5,
+    "bathroom": 4.0,        # Geyser is 4.5kWh (Caught)
 }
-
-
 def detect_anomalies(records: List[Dict]) -> List[Dict]:
     """
     Detects anomalous energy usage based on device-specific thresholds.
