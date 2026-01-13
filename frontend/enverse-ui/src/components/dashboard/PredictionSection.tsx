@@ -17,8 +17,7 @@ function PredictionSection() {
   const [nilmLoading, setNilmLoading] = useState<boolean>(false)
 
   /* ---------- ML Forecast State (XGBoost) ---------- */
-  const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, next_month_kwh: 0 })
-
+const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, next_month_kwh: 0, mae: 0.33 })
   /* ---------- Fetch ML Forecast (Rule #5: Real Data) ---------- */
   useEffect(() => {
     fetch("http://127.0.0.1:8000/energy/forecast")
@@ -76,9 +75,9 @@ function PredictionSection() {
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XGBoost v1.0</span>
            </div>
            <div className="bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100 flex items-center gap-2">
-              <Sparkles size={14} className="text-emerald-600" />
-              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">MAE: 0.33</span>
-           </div>
+    <Sparkles size={14} className="text-emerald-600" />
+    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">MAE: {forecast.mae}</span>
+</div>
         </div>
       </div>
 

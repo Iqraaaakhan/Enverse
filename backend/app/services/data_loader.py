@@ -1,23 +1,39 @@
-import csv
+import pandas as pd
 from pathlib import Path
 from typing import List, Dict
+import os
 
-# Resolve path to data file safely (industry practice)
-DATA_FILE_PATH = Path(__file__).resolve().parents[2] / "data" / "energy_usage.csv"
+# Resolve path to data file safely
+# This points to your data folder
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
-
-def load_energy_data() -> List[Dict]:
+def load_energy_data(filename: str = "energy_usage.csv") -> List[Dict]:
     """
-    Loads energy usage data from CSV file.
-
-    Returns:
-        List of records where each record is a dictionary.
+    Industry-standard data loader using Pandas.
+    Converts CSV data into a list of dictionaries for the API.
     """
-    records = []
+    file_path = DATA_DIR / filename
+    
+    # Check if file exists to prevent crashes
+    if not os.path.exists(file_path):
+        print(f"Warning: {file_path} not found. Returning empty list.")
+        return []
 
-    with open(DATA_FILE_PATH, newline="", encoding="utf-8") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            records.append(row)
+    # Load using Pandas (Optimized for large Kaggle datasets)
+    df = pd.read_csv(file_path)
+    
+    # Ensure timestamps are handled correctly
+    if 'timestamp' in df.columns:
+        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
 
-    return records
+    # Convert to List of Dicts for FastAPI compatibility
+    return df.to_dict(orient="records")
+
+def get_pandas_df(filename: str = "energy_usage.csv") -> pd.DataFrame:
+    """
+    Returns the raw DataFrame for ML training.
+    """
+    file_path = DATA_DIR / filename
+    if not os.path.exists(file_path):
+        return pd.DataFrame()
+    return pd.read_csv(file_path)

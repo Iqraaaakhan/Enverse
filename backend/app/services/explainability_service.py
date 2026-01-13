@@ -4,78 +4,47 @@ from collections import defaultdict
 
 def generate_explanations(calculated_data):
     """
-    Generates human-readable explanations for high energy consumption.
+    Generates human-readable AI insights from real energy data.
     """
     explanations = []
-
-    # 1. Calculate total energy safely
-    try:
-        total_energy = sum(float(item.get("energy_kwh", 0)) for item in calculated_data)
-    except (ValueError, TypeError):
-        total_energy = 0
     
-    if total_energy == 0:
-        return explanations
+    if not calculated_data:
+        return ["System is initializing. No data patterns detected yet."]
 
-    # -----------------------------
-    # 1. Appliance contribution
-    # -----------------------------
-    device_energy = defaultdict(float)
+    # 1. Calculate Total Energy
+    total_energy = sum(item["energy_kwh"] for item in calculated_data)
+    
+    # 2. Find Top Consuming Device
+    device_totals = defaultdict(float)
     for item in calculated_data:
-        try:
-            energy = float(item.get("energy_kwh", 0))
-            device_energy[item["device_name"]] += energy
-        except (ValueError, TypeError):
-            continue
+        device_totals[item["device_name"]] += item["energy_kwh"]
+    
+    if device_totals:
+        top_device = max(device_totals, key=device_totals.get)
+        top_share = (device_totals[top_device] / total_energy) * 100
+        explanations.append(f"{top_device} contributed approximately {int(top_share)}% of total energy usage.")
 
-    if device_energy:
-        top_device = max(device_energy, key=device_energy.get)
-        top_percent = (device_energy[top_device] / total_energy) * 100
-
-        if top_percent > 50:
-            explanations.append(
-                f"{top_device} contributed {top_percent:.0f}% of total energy usage."
-            )
-
-    # -----------------------------
-    # 2. Night usage pattern
-    # -----------------------------
+    # 3. Detect Night Usage (Realism: 10 PM to 6 AM)
     night_energy = 0
     for item in calculated_data:
+        # Extract hour from timestamp string "2025-12-01 06:00"
         try:
-            # Safely handle hour and energy conversion
-            # We use .get("timestamp") or similar if "hour" isn't directly in the dict
-            # But based on your logic, we assume hour is available or defaults to 0
-            hour = int(item.get("hour", 0))
-            if 0 <= hour <= 6:
-                night_energy += float(item.get("energy_kwh", 0))
-        except (ValueError, TypeError):
+            hour = int(item["timestamp"].split(" ")[1].split(":")[0])
+            if hour >= 22 or hour <= 6:
+                night_energy += item["energy_kwh"]
+        except:
             continue
-
-    night_percent = (night_energy / total_energy) * 100
-
-    if night_percent > 30:
-        explanations.append(
-            f"Night-time energy usage increased by {night_percent:.0f}%."
-        )
-
-    # -----------------------------
-    # 3. Idle device detection
-    # -----------------------------
-    idle_devices = []
-    for item in calculated_data:
-        try:
-            power = float(item.get("power_watts", 0))
-            duration = float(item.get("duration_minutes", 0))
             
-            if power < 10 and duration > 60:
-                idle_devices.append(item["device_name"])
-        except (ValueError, TypeError):
-            continue
+    if total_energy > 0:
+        night_share = (night_energy / total_energy) * 100
+        if night_share > 30:
+            explanations.append(f"Night-time usage is high ({int(night_share)}%). Consider optimizing AC/Fans.")
 
-    if idle_devices:
-        explanations.append(
-            f"{idle_devices[0]} was running during idle hours."
-        )
+    # 4. Anomaly Check
+    high_power_devices = [item["device_name"] for item in calculated_data if item["power_watts"] > 3000]
+    if high_power_devices:
+        explanations.append(f"Heavy load detected from {high_power_devices[0]}. Check for efficiency leaks.")
+    else:
+        explanations.append("All devices are operating within normal power parameters.")
 
     return explanations

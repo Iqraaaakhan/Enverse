@@ -84,12 +84,14 @@ def energy_anomalies():
     }
 
 
+# backend/app/main.py (Around Line 90)
+
 @app.get("/energy/predict")
 def predict_energy(power_watts: float, duration_minutes: float):
     """
-    Predict future energy consumption (kWh)
-    based on power and usage duration.
+    Predict future energy consumption (kWh) using the trained XGBoost model.
     """
+    # This now uses the XGBoost brain we updated in Task 1
     predicted_kwh = predictor.predict(
         power_watts=power_watts,
         duration_minutes=duration_minutes
@@ -158,13 +160,23 @@ def energy_forecast():
 from app.services.nilm_explainer import explain_energy_usage
 
 
+# backend/app/main.py (Around Line 130)
+
 @app.get("/energy/explain")
 def explain_energy():
     """
-    Explainable AI endpoint for NILM-based insights.
-    Provides reasons behind high electricity consumption.
+    Explainable AI endpoint.
+    Provides real insights based on the current dashboard data.
     """
-    return explain_energy_usage()
+    raw_data = load_energy_data()
+    calculated = calculate_energy_kwh(raw_data)
+    
+    # Use the dynamic explainer we wrote in explainability_service.py
+    explanations = generate_explanations(calculated)
+    
+    return {
+        "explanations": explanations
+    }
 
 from app.services.nlp_engine import process_user_query
 from pydantic import BaseModel
