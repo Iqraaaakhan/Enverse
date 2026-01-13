@@ -9,55 +9,46 @@ import os
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "energy_forecast_model.pkl"
 DATA_PATH = BASE_DIR.parent.parent / "data" / "energy_usage.csv"
+MAE_REPORT_PATH = BASE_DIR / "mae_report.txt"
 
 def get_energy_forecast():
     """
-    Uses the trained XGBoost model to predict future usage.
+    Reads the trained XGBoost model and the MAE report to provide a forecast.
     """
     if not MODEL_PATH.exists():
-        return {"status": "error", "message": "Model brain not found. Run trainer first."}
+        return {"status": "error", "message": "Model brain not found."}
 
-    # Load the trained model
+    # 1. Load Model
     model = joblib.load(MODEL_PATH)
-
-    # Load the latest state of the house from CSV
-    if not DATA_PATH.exists():
-        return {"status": "error", "message": "Data source missing."}
-        
+    
+    # 2. Load Data
     df = pd.read_csv(DATA_PATH)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     
-    # Get the very last row to see what's happening 'Now'
+    # 3. Get Latest Context
     latest = df.iloc[-1:].copy()
     latest['hour'] = latest['timestamp'].dt.hour
     latest['day_of_week'] = latest['timestamp'].dt.dayofweek
 
-    # Select features (Must match train_forecast.py exactly)
+    # 4. Predict
     features = ['power_watts', 'duration_minutes', 'hour', 'day_of_week']
     X_input = latest[features]
-
-    # Predict the kWh for this specific state
     prediction = float(model.predict(X_input)[0])
-
-    # Industry Logic: If prediction is negative (ML noise), floor it to 0
     prediction = max(0, prediction)
 
-   # backend/app/ml/predict_forecast.py
-# Replace the return statement at the end of get_energy_forecast()
-
-    # Read the real MAE from the file
-    mae_val = 0.33 # Default
-    mae_path = BASE_DIR / "mae_report.txt"
-    if mae_path.exists():
-        with open(mae_path, "r") as f:
-            mae_val = float(f.read())
+    # 5. Read the real MAE (with safety strip)
+    mae_val = "0.33" 
+    if MAE_REPORT_PATH.exists():
+        with open(MAE_REPORT_PATH, "r") as f:
+            mae_val = f.read().strip() # .strip() removes hidden spaces/newlines
 
     return {
         "status": "ml_prediction",
-        "mae": mae_val, # Send real MAE
+        "mae": mae_val, # Root level for safety
         "forecast": {
             "next_day_kwh": round(prediction, 2),
             "next_week_kwh": round(prediction * 7, 2),
             "next_month_kwh": round(prediction * 30, 2),
+            "mae": mae_val # Inside forecast for React mapping
         }
     }

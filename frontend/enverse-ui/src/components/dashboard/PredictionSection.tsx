@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { fetchNilmExplanation } from "../../nilmApi"
 import { BrainCircuit, Calculator, Info, Sparkles, TrendingUp, Wallet, Zap, ShieldCheck } from "lucide-react"
-
-/* ================= Prediction Section (Elite Version) ================= */
 
 function PredictionSection() {
   const [power, setPower] = useState<string>("")
@@ -11,28 +8,31 @@ function PredictionSection() {
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  /* ---------- NILM Explainable AI State ---------- */
-  const [nilmExplanation, setNilmExplanation] = useState<string[]>([])
-  const [applianceBreakdown, setApplianceBreakdown] = useState<Record<string, number>>({})
-  const [nilmLoading, setNilmLoading] = useState<boolean>(false)
+  // Combined State for ML Data
+  const [forecast, setForecast] = useState({ 
+    next_day_kwh: 0, 
+    next_week_kwh: 0, 
+    next_month_kwh: 0, 
+    mae: "0.33",
+    explanations: [] as string[]
+  })
+  const [nilmLoading, setNilmLoading] = useState<boolean>(true)
 
-  /* ---------- ML Forecast State (XGBoost) ---------- */
-const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, next_month_kwh: 0, mae: 0.33 })
-  /* ---------- Fetch ML Forecast (Rule #5: Real Data) ---------- */
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/energy/forecast")
-      .then(res => res.json()).then(data => data.forecast && setForecast(data.forecast)).catch(console.error)
-  }, [])
-
-  /* ---------- Fetch NILM Explainable AI ---------- */
+  /* ---------- Master Data Fetch (Rule #5: Real-time Sync) ---------- */
   useEffect(() => {
     setNilmLoading(true)
-    fetchNilmExplanation()
+    fetch("http://127.0.0.1:8000/energy/forecast")
+      .then(res => res.json())
       .then(data => {
-        if (data.explanations) setNilmExplanation(data.explanations)
-        if (data.appliance_breakdown_percent) setApplianceBreakdown(data.appliance_breakdown_percent)
+        if (data.status === "ml_prediction") {
+          setForecast({
+            ...data.forecast,
+            mae: data.mae || "0.33",
+            explanations: data.explanations || []
+          })
+        }
       })
-      .catch(() => setNilmExplanation([]))
+      .catch(console.error)
       .finally(() => setNilmLoading(false))
   }, [])
 
@@ -43,24 +43,20 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
     setLoading(true)
     try {
       const res = await fetch(`http://127.0.0.1:8000/energy/predict?power_watts=${Number(power)}&duration_minutes=${Number(duration)}`)
-      if (!res.ok) throw new Error("Server error")
       const data = await res.json()
       setResult(Number(data.predicted_energy_kwh))
     } catch { setError("Prediction failed") } finally { setLoading(false) }
   }
 
-  /* -------- Forecast calculations (Rule #7: Preserving original baseline logic) -------- */
-  const baselineMonthlyEnergy = 13.608
-  const dailyForecast = result !== null && !isNaN(result) ? result : forecast.next_day_kwh || baselineMonthlyEnergy / 30
-  const weeklyForecast = result !== null ? dailyForecast * 7 : forecast.next_week_kwh || dailyForecast * 7
-  const monthlyForecast = result !== null ? dailyForecast * 30 : forecast.next_month_kwh || baselineMonthlyEnergy
+  // Display Logic
+  const displayDay = result !== null ? result : forecast.next_day_kwh
+  const displayWeek = result !== null ? result * 7 : forecast.next_week_kwh
+  const displayMonth = result !== null ? result * 30 : forecast.next_month_kwh
   const TARIFF_PER_KWH = 4.17
-  const estimatedBill = (monthlyForecast * TARIFF_PER_KWH).toFixed(2)
+  const estimatedBill = (displayMonth * TARIFF_PER_KWH).toFixed(2)
 
   return (
     <div className="space-y-10 animate-in fade-in duration-1000">
-      
-      {/* 1. TOP BRANDING HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
@@ -75,24 +71,20 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">XGBoost v1.0</span>
            </div>
            <div className="bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100 flex items-center gap-2">
-    <Sparkles size={14} className="text-emerald-600" />
-    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">MAE: {forecast.mae}</span>
-</div>
+              <Sparkles size={14} className="text-emerald-600" />
+              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">MAE: {forecast.mae}</span>
+           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* 2. LEFT: PREDICTION CONSOLE (8 cols) */}
         <div className="lg:col-span-8 space-y-8">
           <div className="premium-card p-10 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none"><Calculator size={200} /></div>
-            
             <div className="flex items-center gap-3 mb-10 border-b border-slate-50 pb-6">
                <TrendingUp className="text-amber-600" size={20} />
                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">What-If Analysis</h4>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Consumption Power</label>
@@ -109,11 +101,9 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
                 </div>
               </div>
             </div>
-
             <button onClick={predict} disabled={loading} className="w-full md:w-auto px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black uppercase tracking-[0.2em] hover:bg-amber-600 transition-all shadow-2xl active:scale-95 disabled:opacity-50">
               {loading ? "Running Inference..." : "Predict Energy Usage"}
             </button>
-
             {result !== null && (
               <div className="mt-10 p-10 bg-amber-50 rounded-[2.5rem] border border-amber-100 animate-in zoom-in-95 duration-500 flex flex-col md:flex-row items-center justify-between gap-6">
                  <div>
@@ -131,17 +121,16 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
             {error && <div className="mt-6 text-rose-500 font-bold text-sm bg-rose-50 p-5 rounded-2xl border border-rose-100">{error}</div>}
           </div>
 
-          {/* 3. FORECAST GRID (Real Logic: Day/Week/Month) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[ 
-              { l: 'Next Day', v: dailyForecast }, 
-              { l: 'Next Week', v: weeklyForecast }, 
-              { l: 'Next Month', v: monthlyForecast } 
+              { l: 'Next Day', v: displayDay }, 
+              { l: 'Next Week', v: displayWeek }, 
+              { l: 'Next Month', v: displayMonth } 
             ].map((f, i) => (
               <div key={i} className="premium-card p-8 flex flex-col gap-4">
                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</p>
                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{f.v.toFixed(2)}</span>
+                    <span className="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{Number(f.v).toFixed(2)}</span>
                     <span className="text-[10px] font-bold text-amber-600 uppercase italic">kWh</span>
                  </div>
               </div>
@@ -149,7 +138,6 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
           </div>
         </div>
 
-        {/* 4. RIGHT: BILLING & AI INSIGHTS (4 cols) */}
         <div className="lg:col-span-4 space-y-8">
           <div className="premium-card p-10 bg-slate-900 text-white shadow-2xl relative overflow-hidden">
              <div className="absolute -right-4 -bottom-4 p-4 opacity-10"><Wallet size={120} /></div>
@@ -173,7 +161,7 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
             </div>
             <ul className="space-y-6">
               {nilmLoading ? <p className="text-xs font-bold text-slate-400 italic">Analyzing disaggregation...</p> : 
-               nilmExplanation.map((ex, i) => (
+               forecast.explanations.map((ex, i) => (
                 <li key={i} className="flex gap-4 group">
                   <div className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-2 shrink-0 group-hover:scale-150 transition-transform" />
                   <p className="text-[11px] font-bold text-slate-500 leading-relaxed transition-colors group-hover:text-slate-900">{ex}</p>
@@ -181,13 +169,7 @@ const [forecast, setForecast] = useState({ next_day_kwh: 0, next_week_kwh: 0, ne
               ))}
             </ul>
           </div>
-
-          <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100 flex items-start gap-3">
-             <Zap size={16} className="text-blue-500 mt-0.5" />
-             <p className="text-[10px] font-bold text-blue-600/70 leading-relaxed uppercase tracking-tight">Derived from NILM disaggregation model inference.</p>
-          </div>
         </div>
-
       </div>
     </div>
   )
