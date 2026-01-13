@@ -6,6 +6,7 @@ import AnomalySection from "./components/dashboard/AnomalySection"
 import EnergySummarySection from "./components/dashboard/EnergySummarySection"
 import PredictionSection from "./components/dashboard/PredictionSection"
 import DeviceEnergyCharts from "./components/dashboard/DeviceEnergyCharts"
+import ChatBot from "./components/dashboard/ChatBot"
 
 type Section = "dashboard" | "summary" | "anomalies" | "prediction"
 
@@ -44,14 +45,12 @@ function App() {
       {/* SIDEBAR - Liquid scaling for mobile */}
       <aside className={`fixed inset-0 z-[100] md:relative md:translate-x-0 transition-all duration-500 transform ${menuOpen ? "translate-x-0 w-full" : "-translate-x-full w-80"} md:w-80 bg-white border-r border-slate-100 p-8 md:p-10 flex flex-col`}>
         
-        {/* Absolute X button ensures it is always in the corner regardless of padding */}
         <button onClick={() => setMenuOpen(false)} className="md:hidden absolute top-6 right-6 p-3 bg-slate-100 rounded-full text-slate-900 active:bg-slate-200 shadow-sm"><X size={24} /></button>
 
         <div className="mb-12 mt-10 md:mt-0">
           <div className="flex items-center gap-3">
              <div className="p-2.5 bg-slate-900 rounded-2xl text-white shadow-xl"><Waves size={24} /></div>
-             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none truncate">
-                {/* VERSE darkened to amber-900 for high-end contrast */}
+             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none whitespace-nowrap pr-4">
                 EN<span className="font-bold text-amber-900 italic">VERSE</span>
              </h1>
           </div>
@@ -76,10 +75,11 @@ function App() {
               <div className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></div>
               <p className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em]">Engine Active</p>
             </div>
-            {/* Header: Fixed scaling (Removed Command Center) */}
-            <h2 className="text-4xl sm:text-7xl md:text-9xl font-black text-slate-900 tracking-tighter leading-none italic uppercase break-words">
-              EN<span className="text-amber-900 font-bold italic opacity-40">VERSE</span>
-            </h2>
+            <div className="relative"> 
+              <h2 className="text-4xl sm:text-7xl md:text-9xl font-black text-slate-900 tracking-tighter leading-none italic uppercase whitespace-nowrap pr-[0.2em]">
+                EN<span className="text-amber-900 font-bold opacity-40">VERSE</span>
+              </h2>
+            </div>
           </div>
           
           <div className="flex items-center gap-4 bg-white px-5 py-3 rounded-full shadow-sm border border-slate-100 self-start lg:self-auto">
@@ -103,6 +103,9 @@ function App() {
           {activeSection === "prediction" && <PredictionSection />}
         </div>
       </main>
+
+      {/* ELITE CHATBOT SIDEBAR PANEL */}
+      <ChatBot />
     </div>
   )
 }

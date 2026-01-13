@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+from pydantic import BaseModel
+from app.services.nlp_engine import process_user_query
 
 # Ensure backend/ is in PYTHONPATH (fix for uvicorn --reload)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -164,3 +166,31 @@ def explain_energy():
     """
     return explain_energy_usage()
 
+from app.services.nlp_engine import process_user_query
+from pydantic import BaseModel
+
+class ChatQuery(BaseModel):
+    message: str
+
+@app.post("/chat")
+def chat_with_enverse(query: ChatQuery):
+    """
+    NLP Chatbot endpoint for Enverse Bot
+    """
+    response = process_user_query(query.message)
+    return response
+
+# Add these imports at the top of main.py (Line 15 approx)
+from pydantic import BaseModel
+from app.services.nlp_engine import process_user_query
+
+# Add this class and endpoint at the very bottom of main.py
+class ChatMessage(BaseModel):
+    message: str
+
+@app.post("/chat")
+def chat_endpoint(chat: ChatMessage):
+    """
+    Endpoint for the Semantic NLP Chatbot
+    """
+    return process_user_query(chat.message)
