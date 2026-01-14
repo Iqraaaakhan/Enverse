@@ -51,7 +51,8 @@ function Card({ title, value, unit, icon: Icon, color, sub, alertCount }: { titl
 function KpiCards({ totalEnergy, activeDevices, anomalies }: KpiCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-      <Card title="Consumption" value={totalEnergy} unit="kWh" icon={Zap} color="bg-amber-400" sub="Live" />
+      {/* Changed title to 'Monthly Usage' for professional context */}
+      <Card title="Monthly Usage" value={totalEnergy} unit="kWh" icon={Zap} color="bg-amber-400" sub="Estimated" />
       <Card title="Active Devices" value={activeDevices} icon={Cpu} color="bg-blue-400" sub="Synced" />
       <Card title="Security Alerts" value={anomalies} icon={ShieldCheck} color="bg-rose-400" sub={anomalies > 0 ? "Check" : "Secure"} alertCount={anomalies} />
     </div>

@@ -111,20 +111,23 @@ function PredictionSection() {
             <button onClick={predict} disabled={loading} className="w-full md:w-auto px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black uppercase tracking-[0.2em] hover:bg-amber-600 transition-all shadow-2xl active:scale-95 disabled:opacity-50">
               {loading ? "Running Inference..." : "Run AI Estimation"}
             </button>
-            {result !== null && (
-              <div className="mt-10 p-10 bg-amber-50 rounded-[2.5rem] border border-amber-100 animate-in zoom-in-95 duration-500 flex flex-col md:flex-row items-center justify-between gap-6">
-                 <div>
-                    <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2">Estimated Consumption</p>
-                    <div className="flex items-baseline gap-2">
-                       <span className="text-7xl font-black text-slate-900 tracking-tighter tabular-nums">{result.toFixed(3)}</span>
-                       <span className="text-lg font-black text-amber-600 uppercase">kWh</span>
-                    </div>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed italic max-w-[200px]">Result derived from XGBoost training on Kaggle household load sets.</p>
-                 </div>
-              </div>
-            )}
+           {result !== null && (
+  <div className="mt-10 p-10 bg-amber-50 rounded-[2.5rem] border border-amber-100 animate-in zoom-in-95 duration-500 flex flex-col md:flex-row items-center justify-between gap-6">
+     <div>
+        {/* Added 'Single Event' to make it understandable */}
+        <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2">Estimated Consumption (Single Event)</p>
+        <div className="flex items-baseline gap-2">
+           <span className="text-7xl font-black text-slate-900 tracking-tighter tabular-nums">{result.toFixed(3)}</span>
+           <span className="text-lg font-black text-amber-600 uppercase">kWh</span>
+        </div>
+     </div>
+     <div className="text-right">
+        <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed italic max-w-[200px]">
+          This is the AI's estimate for this specific usage duration.
+        </p>
+     </div>
+  </div>
+)}
             {error && <div className="mt-6 text-rose-500 font-bold text-sm bg-rose-50 p-5 rounded-2xl border border-rose-100">{error}</div>}
           </div>
 
