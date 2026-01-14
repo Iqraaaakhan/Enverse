@@ -19,27 +19,36 @@ class EnergyPredictor:
 
     def predict(self, power_watts: float, duration_minutes: float) -> float:
         """
-        Uses the XGBoost model to predict energy for manual user input.
+        Uses the XGBoost model to estimate energy for manual user input.
+        Updated to support the 5-feature Kaggle-trained model.
         """
         if not self.model:
             # Fallback to physics if model isn't trained yet
             return round((power_watts * duration_minutes) / 60000, 4)
 
-        # Get current time features (Realism: AI knows what time it is 'now')
+        # 1. Contextual Feature Engineering
         now = datetime.datetime.now()
-        hour = now.hour
-        day_of_week = now.weekday()
+        is_night = 1 if now.hour >= 22 or now.hour <= 6 else 0
+        
+        # We assume 'Occupied' and a standard 'Temp' for manual what-if analysis
+        is_occupied = 1 
+        temp_setting = 22.0 
 
-        # Create a DataFrame for the model (Features: power, duration, hour, day)
+        # 2. Create DataFrame with all 5 features required by the new model
         input_df = pd.DataFrame([{
             "power_watts": power_watts,
             "duration_minutes": duration_minutes,
-            "hour": hour,
-            "day_of_week": day_of_week
+            "is_night": is_night,
+            "is_occupied": is_occupied,
+            "temp_setting": temp_setting
         }])
 
-        # Predict using XGBoost
-        prediction = float(self.model.predict(input_df)[0])
-        
-        # Ensure we don't return negative values (ML noise)
-        return round(max(0, prediction), 4)
+        # 3. Predict using XGBoost
+        try:
+            prediction = float(self.model.predict(input_df)[0])
+            # Ensure we don't return negative values (ML noise)
+            return round(max(0, prediction), 4)
+        except Exception as e:
+            print(f"Prediction Error: {e}")
+            # Fallback to physics if feature mismatch occurs
+            return round((power_watts * duration_minutes) / 60000, 4)

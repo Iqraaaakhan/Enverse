@@ -1,6 +1,7 @@
 # backend/app/services/data_processor.py
 
 import pandas as pd
+import numpy as np
 from pathlib import Path
 
 # Paths
@@ -16,29 +17,46 @@ def process_kaggle_data(input_filename: str):
     output_path = DATA_DIR / "energy_usage.csv"
 
     if not raw_path.exists():
-        print(f"Error: {input_filename} not found in data folder.")
+        print(f"Error: {input_filename} not found in {DATA_DIR}")
         return
 
-    print(f"Reading {input_filename}...")
-    df = pd.read_csv(raw_path)
+    print(f"--- STARTING PROFESSIONAL DATA PIPELINE ---")
+    print(f"Reading: {input_filename}...")
+    
+    # Load data - handling potential semicolon separators common in Kaggle datasets
+    try:
+        df = pd.read_csv(raw_path, low_memory=False, sep=None, engine='python')
+    except Exception as e:
+        print(f"Read Error: {e}")
+        return
 
-    # --- PROFESSIONAL CLEANING LOGIC ---
     # 1. Standardize Timestamps
-    # Kaggle files often use 'Date' or 'time'. We convert to our 'timestamp'
-    time_col = [col for col in df.columns if 'time' in col.lower() or 'date' in col.lower()][0]
-    df['timestamp'] = pd.to_datetime(df[time_col]).dt.strftime('%Y-%m-%d %H:%M')
+    # Detect common time column names
+    time_cols = [c for c in df.columns if any(x in c.lower() for x in ['time', 'date', 'dt'])]
+    if not time_cols:
+        print("Error: No timestamp column detected.")
+        return
+    
+    df['timestamp'] = pd.to_datetime(df[time_cols[0]], errors='coerce')
+    df = df.dropna(subset=['timestamp']) # Remove rows with corrupt dates
+    df['timestamp'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M')
 
-    # 2. Map Power Columns
-    # If Kaggle uses 'Global_active_power', we convert it to 'power_watts'
-    power_col = [col for col in df.columns if 'power' in col.lower() or 'usage' in col.lower()][0]
-    # Convert to Watts if data is in kW (Common in Kaggle)
-    if df[power_col].max() < 100: 
-        df['power_watts'] = df[power_col] * 1000
-    else:
-        df['power_watts'] = df[power_col]
+    # 2. Map Power Columns (Watts)
+    # Kaggle often uses 'Global_active_power' in kW. We need Watts.
+    power_cols = [c for c in df.columns if any(x in c.lower() for x in ['power', 'active', 'usage', 'kw'])]
+    if not power_cols:
+        print("Error: No power/usage column detected.")
+        return
+    
+    # Convert to numeric, forcing errors to NaN then filling
+    df['power_watts'] = pd.to_numeric(df[power_cols[0]], errors='coerce').fillna(0)
+    
+    # If values are small (e.g., < 50), assume they are in kW and convert to Watts
+    if df['power_watts'].max() < 100:
+        df['power_watts'] = df['power_watts'] * 1000
 
-    # 3. Assign Devices (Since Kaggle often monitors the whole house)
-    # We distribute the data among your 16 professional device categories
+    # 3. Professional Device Disaggregation (NILM Simulation)
+    # Since Kaggle datasets are often "Whole House", we distribute load to 16 categories
     devices = [
         "Bedroom AC", "Refrigerator", "Electric Kettle", "Geyser", 
         "Washing Machine", "Microwave Oven", "Gaming PC", "Home Theater",
@@ -46,24 +64,35 @@ def process_kaggle_data(input_filename: str):
         "Water Heater", "Dishwasher", "Bedroom Light", "Bedroom Fan"
     ]
     
-    # Create a repeating list of devices to fill the rows
-    import numpy as np
-    df['device_name'] = np.resize(devices, len(df))
-    
-    # Simple mapping for device types
-    df['device_type'] = df['device_name'].apply(lambda x: x.split()[-1].lower())
+    # Map device types for the Anomaly Detector logic
+    device_type_map = {
+        "AC": "ac", "Fan": "fan", "Light": "light", "Kettle": "kitchen",
+        "Oven": "kitchen", "Machine": "appliance", "Geyser": "bathroom",
+        "Heater": "bathroom", "TV": "entertainment", "PC": "entertainment",
+        "Charger": "appliance", "Refrigerator": "appliance", "Dishwasher": "appliance"
+    }
 
-    # 4. Set standard duration
+    df['device_name'] = np.resize(devices, len(df))
+    df['device_type'] = df['device_name'].apply(
+        lambda x: next((v for k, v in device_type_map.items() if k in x), "appliance")
+    )
+
+    # 4. Set standard duration (usually 60 mins for hourly Kaggle data)
     df['duration_minutes'] = 60 
 
-    # 5. Select final columns and save
+    # 5. Final Selection & Performance Optimization
     final_df = df[['timestamp', 'device_name', 'device_type', 'power_watts', 'duration_minutes']]
     
-    # Only take the last 5000 rows for performance (Industry standard for 'Recent History')
-    final_df.tail(5000).to_csv(output_path, index=False)
+    # Take the last 10,000 rows for high-performance real-time dashboarding
+    final_df.tail(10000).to_csv(output_path, index=False)
     
-    print(f"SUCCESS: {len(final_df.tail(5000))} rows processed and saved to energy_usage.csv")
+    print(f"SUCCESS: {len(final_df.tail(10000))} rows processed.")
+    print(f"Saved to: {output_path}")
 
 if __name__ == "__main__":
-    # Change this to your actual Kaggle filename when you download it
-    process_kaggle_data("your_kaggle_file.csv")
+    # This will be triggered once you provide the Kaggle filename
+    import sys
+    if len(sys.argv) > 1:
+        process_kaggle_data(sys.argv[1])
+    else:
+        print("Usage: python data_processor.py <kaggle_file.csv>")

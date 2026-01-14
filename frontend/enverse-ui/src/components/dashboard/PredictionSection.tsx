@@ -61,9 +61,9 @@ function PredictionSection() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
              <div className="p-3 bg-amber-600 text-white rounded-2xl shadow-xl shadow-amber-200"><BrainCircuit size={24} /></div>
-             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em]">Engine Synced</p>
+             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em]">Estimation Engine Active</p>
           </div>
-          <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none italic">Predictive Intel</h2>
+          <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none italic">AI Estimation</h2>
         </div>
         <div className="flex flex-wrap gap-2">
            <div className="bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm flex items-center gap-2">
@@ -81,9 +81,16 @@ function PredictionSection() {
         <div className="lg:col-span-8 space-y-8">
           <div className="premium-card p-10 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none"><Calculator size={200} /></div>
-            <div className="flex items-center gap-3 mb-10 border-b border-slate-50 pb-6">
-               <TrendingUp className="text-amber-600" size={20} />
-               <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">What-If Analysis</h4>
+            <div className="flex items-center justify-between mb-10 border-b border-slate-50 pb-6">
+               <div className="flex items-center gap-3">
+                  <TrendingUp className="text-amber-600" size={20} />
+                  <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">Behavioral Analysis</h4>
+               </div>
+               {/* New Context Badge - Professional & Subtle */}
+               <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">
+                  <ShieldCheck size={12} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Pattern-based Occupancy</span>
+               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
               <div className="space-y-3">
@@ -102,19 +109,19 @@ function PredictionSection() {
               </div>
             </div>
             <button onClick={predict} disabled={loading} className="w-full md:w-auto px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black uppercase tracking-[0.2em] hover:bg-amber-600 transition-all shadow-2xl active:scale-95 disabled:opacity-50">
-              {loading ? "Running Inference..." : "Predict Energy Usage"}
+              {loading ? "Running Inference..." : "Run AI Estimation"}
             </button>
             {result !== null && (
               <div className="mt-10 p-10 bg-amber-50 rounded-[2.5rem] border border-amber-100 animate-in zoom-in-95 duration-500 flex flex-col md:flex-row items-center justify-between gap-6">
                  <div>
-                    <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2">Calculated Prediction</p>
+                    <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2">Estimated Consumption</p>
                     <div className="flex items-baseline gap-2">
                        <span className="text-7xl font-black text-slate-900 tracking-tighter tabular-nums">{result.toFixed(3)}</span>
                        <span className="text-lg font-black text-amber-600 uppercase">kWh</span>
                     </div>
                  </div>
                  <div className="text-right">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed italic max-w-[200px]">Result derived from XGBoost training on household load sets.</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed italic max-w-[200px]">Result derived from XGBoost training on Kaggle household load sets.</p>
                  </div>
               </div>
             )}

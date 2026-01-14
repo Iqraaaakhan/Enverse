@@ -29,3 +29,25 @@
 
 svg { overflow: visible !important; }
 *:focus { outline: none !important; }
+
+/* Custom Scrollbar for a Professional UI */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Responsive Grid Fix for Mobile */
+@media (max-width: 640px) {
+  .premium-card {
+    @apply rounded-[1.2rem] p-6;
+  }
+}
