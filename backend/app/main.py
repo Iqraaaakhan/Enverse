@@ -5,6 +5,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.services.energy_estimation_service import estimate_energy
+from fastapi import Body
 
 # Ensure backend/ is in PYTHONPATH
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -143,3 +145,9 @@ def explain_energy():
 @app.post("/chat")
 def chat_endpoint(query: ChatQuery):
     return process_user_query(query.message)
+
+@app.post("/api/estimate-energy")
+def estimate_energy_api(payload: dict = Body(...)):
+    return {
+        "estimated_kwh": estimate_energy(payload)
+    }
