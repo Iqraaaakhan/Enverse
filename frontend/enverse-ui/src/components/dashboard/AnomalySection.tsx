@@ -1,7 +1,12 @@
-import { ShieldAlert, Clock, AlertTriangle, Cpu } from "lucide-react"
+import { ShieldAlert, Clock, AlertTriangle } from "lucide-react"
 
+// Updated Type Definition to support AI Dynamic thresholds
 type Anomaly = {
-  timestamp: string; device_name: string; energy_kwh: number; threshold_kwh: number; reason: string;
+  timestamp: string; 
+  device_name: string; 
+  energy_kwh: number; 
+  threshold_kwh: number | string; // Changed to allow "AI-Dynamic"
+  reason: string;
 }
 
 function AnomalySection({ anomalies }: { anomalies: Anomaly[] }) {
@@ -16,18 +21,18 @@ function AnomalySection({ anomalies }: { anomalies: Anomaly[] }) {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <div className="flex items-center gap-4">
         <div className="p-3.5 bg-rose-600 text-white rounded-2xl shadow-xl"><ShieldAlert size={20} /></div>
         <div>
           <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Security</h3>
-          <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Incident Reports</p>
+          <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Isolation Forest Alerts</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:gap-6">
         {anomalies.map((a, i) => (
-          <div key={i} className="premium-card p-6 md:p-10 border-l-4 md:border-l-8 border-l-rose-500 flex flex-col gap-6 group">
+          <div key={i} className="premium-card p-6 md:p-10 border-l-4 md:border-l-8 border-l-rose-500 flex flex-col gap-6 group hover:shadow-2xl transition-all duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                <div className="flex items-center gap-4">
                   <div className="p-3 bg-rose-50 rounded-2xl text-rose-600"><AlertTriangle size={24} /></div>
@@ -43,11 +48,13 @@ function AnomalySection({ anomalies }: { anomalies: Anomaly[] }) {
                <div className="flex gap-6 md:gap-10 border-t sm:border-t-0 sm:border-l border-slate-100 pt-4 sm:pt-0 sm:pl-10 w-full sm:w-auto">
                   <div>
                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Actual</p>
-                     <p className="text-xl font-black text-slate-900 tabular-nums leading-none">{a.energy_kwh}<span className="text-[9px] ml-0.5">kWh</span></p>
+                     <p className="text-xl font-black text-slate-900 tabular-nums leading-none">{Number(a.energy_kwh).toFixed(2)}<span className="text-[9px] ml-0.5">kWh</span></p>
                   </div>
                   <div>
                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Limit</p>
-                     <p className="text-lg font-bold text-slate-300 leading-none line-through">{a.threshold_kwh}kWh</p>
+                     <p className="text-lg font-bold text-slate-300 leading-none">
+                        {typeof a.threshold_kwh === 'number' ? `${a.threshold_kwh} kWh` : a.threshold_kwh}
+                     </p>
                   </div>
                </div>
             </div>

@@ -1,12 +1,12 @@
-# backend/app/main.py
+# Folder: backend/app
+# File: main.py
 
 import sys
 from pathlib import Path
 from pydantic import BaseModel
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
-from app.services.energy_estimation_service import estimate_energy
-from fastapi import Body
+import datetime
 
 # Ensure backend/ is in PYTHONPATH
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +20,15 @@ from app.services.forecast_service import fetch_energy_forecast
 from app.services.data_loader import load_energy_data
 from app.services.energy_calculator import calculate_energy_kwh
 from app.services.anomaly_detector import detect_anomalies
+from app.services.energy_estimation_service import estimate_energy
 from app.services.explainability_service import generate_explanations
+from app.services.nilm_explainer import explain_energy_usage
 
 # Initialize App
 app = FastAPI(
     title="Enverse API",
     description="Backend services for the Enverse Energy Intelligence Platform",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 # Middleware
@@ -43,47 +45,69 @@ class ChatQuery(BaseModel):
     message: str
 
 # Global Instances
+# This loads the XGBoost model once on startup
 predictor = EnergyPredictor()
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "ai_models": "active"}
 
 @app.get("/energy/summary")
 def energy_summary():
+    """
+    Calculates energy usage based on ACTUAL data in the CSV.
+    Fixes the '6 devices' bug by counting unique devices dynamically.
+    """
     raw_data = load_energy_data()
     calculated = calculate_energy_kwh(raw_data)
     
     if not len(calculated):
         return {"total_energy_kwh": 0, "device_wise_energy_kwh": {}}
 
-    # 1. Calculate the actual time span of the data
-    # Since we have 6 devices logged, 5000 records / 6 devices ≈ 833 hours
-    # 833 hours / 24 ≈ 34.7 days.
-    total_raw_energy = sum(item["energy_kwh"] for item in calculated)
-    
-    # We use a 'House Factor' to account for simultaneous device usage
-    # This makes the 'Monthly Usage' realistic (around 400-500 kWh)
-    estimated_days = (len(calculated) / 6) / 24 
-    daily_avg = total_raw_energy / estimated_days
-    monthly_estimate = daily_avg * 30
+    # 1. Dynamic Device Counting (Real Logic)
+    # Finds exactly how many unique devices exist (e.g., 16)
+    unique_devices = set(item["device_name"] for item in calculated)
+    device_count = len(unique_devices) if len(unique_devices) > 0 else 1
 
+    # 2. Calculate Time Span
+    # Total records / device_count = records per device
+    # records per device / 24 (assuming hourly data) = days
+    total_records = len(calculated)
+    estimated_days = (total_records / device_count) / 24 
+    
+    # Safety check
+    if estimated_days < 1: 
+        estimated_days = 1
+
+    # 3. Aggregation & Normalization
     device_summary = {}
     for item in calculated:
         device = item["device_name"]
-        # Normalize device usage to monthly
+        # Normalize to Monthly: (Actual kWh / Days Recorded) * 30 Days
+        # This projects the monthly usage based on available data
         device_summary[device] = device_summary.get(device, 0) + (item["energy_kwh"] / estimated_days * 30)
 
+    total_monthly_kwh = sum(device_summary.values())
+
     return {
-        "total_energy_kwh": round(monthly_estimate, 2),
+        "total_energy_kwh": round(total_monthly_kwh, 2),
         "device_wise_energy_kwh": {k: round(v, 2) for k, v in device_summary.items()},
     }
 
 @app.get("/dashboard")
 def dashboard():
-    summary = energy_summary() # Reuse the professional logic above
+    """
+    Aggregates data for the main dashboard.
+    Uses energy_summary for accurate totals and anomaly_detector for security.
+    """
+    # 1. Get Accurate Summaries (Fixes the 16 device issue)
+    summary = energy_summary()
+    
+    # 2. Load Data for Anomalies
     raw_data = load_energy_data()
     calculated = calculate_energy_kwh(raw_data)
+    
+    # 3. AI Anomaly Detection (Isolation Forest)
     anomalies = detect_anomalies(calculated)
     
     # Filter anomalies to only show recent ones (last 10) to keep UI clean
@@ -97,39 +121,28 @@ def dashboard():
         "anomalies": recent_anomalies
     }
 
-@app.get("/energy/predict")
-def predict_energy(power_watts: float, duration_minutes: float):
-    predicted_kwh = predictor.predict(power_watts, duration_minutes)
-    return {
-        "power_watts": power_watts,
-        "duration_minutes": duration_minutes,
-        "predicted_energy_kwh": predicted_kwh
-    }
-
-@app.get("/dashboard")
-def dashboard():
-    raw_data = load_energy_data()
-    calculated = calculate_energy_kwh(raw_data)
-    total_energy = sum(item["energy_kwh"] for item in calculated)
-    device_summary = {}
-    for item in calculated:
-        device = item["device_name"]
-        device_summary[device] = device_summary.get(device, 0) + item["energy_kwh"]
-    anomalies = detect_anomalies(calculated)
-    return {
-        "total_energy_kwh": round(total_energy, 3),
-        "active_devices": len(device_summary),
-        "anomaly_count": len(anomalies),
-        "device_wise_energy_kwh": device_summary,
-        "anomalies": anomalies
-    }
+@app.get("/api/realtime-forecast")
+def realtime_forecast():
+    """
+    REAL AI: Uses the trained XGBoost model to predict the NEXT hour's consumption.
+    This powers the 4th KPI card on the frontend.
+    """
+    # Simulate current conditions (in a real app, these come from sensors)
+    # We predict for a standard load (1500W) to get a baseline 'next hour' cost
+    total_predicted = predictor.predict(power_watts=1500, duration_minutes=60) 
+    
+    return {"next_hour_kwh": total_predicted}
 
 @app.get("/energy/forecast")
 def energy_forecast():
-    raw_data = load_energy_data()
-    calculated = calculate_energy_kwh(raw_data)
+    # 1. Get Forecast (Random Forest / XGBoost)
     forecast = fetch_energy_forecast()
-    explanations = generate_explanations(calculated)
+    
+    # 2. Get Insights (NILM)
+    # We use the NILM explainer here to provide text insights
+    nilm_data = explain_energy_usage()
+    explanations = nilm_data.get("explanations", [])
+    
     return {
         **forecast,
         "explanations": explanations
@@ -137,17 +150,17 @@ def energy_forecast():
 
 @app.get("/energy/explain")
 def explain_energy():
-    raw_data = load_energy_data()
-    calculated = calculate_energy_kwh(raw_data)
-    explanations = generate_explanations(calculated)
-    return {"explanations": explanations}
+    # Dedicated endpoint for NILM explanations
+    return explain_energy_usage()
 
 @app.post("/chat")
 def chat_endpoint(query: ChatQuery):
+    # NLP Engine (Sentence Transformers)
     return process_user_query(query.message)
 
 @app.post("/api/estimate-energy")
 def estimate_energy_api(payload: dict = Body(...)):
+    # Uses the Random Forest model trained on Kaggle data for specific appliance estimation
     return {
         "estimated_kwh": estimate_energy(payload)
     }

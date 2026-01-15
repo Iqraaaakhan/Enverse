@@ -1,21 +1,34 @@
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts"
+// Folder: frontend/enverse-ui/src/components/dashboard
+// File: DeviceEnergyCharts.tsx
+
+import { AreaChart, Area, XAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts"
 import { Activity, PieChart as PieIcon, Zap, Info } from "lucide-react"
 
 type Props = { devices: Record<string, number>; activeCount: number }
 
-const COLORS = ["#d97706", "#92400e", "#b45309", "#78350f", "#451a03", "#0f172a"]
+// Industry Standard: Dynamic Color Generator
+// Generates a spectrum of colors based on the number of devices, ensuring no two look exactly alike
+const generateColors = (count: number) => {
+  const baseColors = [
+    "#d97706", "#b45309", "#92400e", "#78350f", "#451a03", // Ambers/Browns
+    "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", // Slates
+    "#059669", "#047857", "#065f46", "#064e3b",             // Emeralds
+    "#b91c1c", "#991b1b", "#7f1d1d"                         // Reds
+  ];
+  // If we have more devices than base colors, cycle through them
+  return Array.from({ length: count }, (_, i) => baseColors[i % baseColors.length]);
+}
 
-// Industry Standard: Custom Tooltip with high contrast
-const CustomTooltip = ({ active, payload, total }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="premium-card p-4 md:p-5 shadow-2xl border-none !bg-white/95 backdrop-blur-lg z-[200]">
+      <div className="premium-card p-4 shadow-2xl border-none !bg-white/95 backdrop-blur-lg z-[200]">
         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Sensor Detail</p>
-        <p className="text-base md:text-xl font-black text-slate-900 mb-2 leading-none">{data.name}</p>
+        <p className="text-sm font-black text-slate-900 mb-2 leading-none">{data.name}</p>
         <div className="flex items-center gap-2">
            <Zap size={14} className="text-amber-500 fill-amber-500" />
-           <p className="text-xl md:text-2xl font-black text-slate-900">{data.value} <span className="text-[10px] text-amber-700 font-extrabold uppercase font-sans">kWh</span></p>
+           <p className="text-lg font-black text-slate-900">{data.value} <span className="text-[10px] text-amber-700 font-extrabold uppercase font-sans">kWh</span></p>
         </div>
       </div>
     );
@@ -24,19 +37,28 @@ const CustomTooltip = ({ active, payload, total }: any) => {
 };
 
 function DeviceEnergyCharts({ devices, activeCount }: Props) {
-  // REAL DATA LOGIC
+  // 1. Transform Data
   const chartData = Object.entries(devices).map(([name, value]) => ({ 
     name, 
     value: Number(value.toFixed(2)) 
   }));
   
-  const total = chartData.reduce((s, d) => s + d.value, 0);
-  const pieData = [...chartData].sort((a,b) => b.value - a.value).slice(0, 6).map(d => ({ ...d, percent: (d.value / total) * 100 }));
+  // 2. Sort by value (highest usage first) for better visualization
+  chartData.sort((a, b) => b.value - a.value);
 
-  // Helper to prevent overlapping labels on mobile
+  const total = chartData.reduce((s, d) => s + d.value, 0);
+  
+  // 3. NO SLICING - Show all devices
+  const pieData = chartData.map(d => ({ 
+    ...d, 
+    percent: total > 0 ? (d.value / total) * 100 : 0 
+  }));
+
+  const COLORS = generateColors(pieData.length);
+
   const formatXAxis = (tickItem: string) => {
-    if (window.innerWidth < 640 && tickItem.length > 10) {
-      return `${tickItem.substring(0, 8)}...`;
+    if (typeof window !== 'undefined' && window.innerWidth < 640 && tickItem.length > 8) {
+      return `${tickItem.substring(0, 6)}..`;
     }
     return tickItem;
   };
@@ -44,22 +66,22 @@ function DeviceEnergyCharts({ devices, activeCount }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
       
-      {/* 1. LOAD PROFILE: Optimized for Mobile/Desktop */}
-      <div className="premium-card p-5 md:p-14 relative group">
-        <div className="flex items-center justify-between mb-8 md:mb-12">
-           <div className="flex items-center gap-3 md:gap-4">
-              <div className="p-2.5 md:p-3.5 bg-amber-500/10 rounded-2xl text-amber-600 shadow-sm"><Activity size={20} /></div>
+      {/* 1. LOAD PROFILE (Area Chart) */}
+      <div className="premium-card p-5 md:p-10 relative group">
+        <div className="flex items-center justify-between mb-8">
+           <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/10 rounded-2xl text-amber-600 shadow-sm"><Activity size={20} /></div>
               <div>
-                 <h3 className="text-lg md:text-xl font-black text-slate-900 tracking-tight uppercase leading-none">Load Profile</h3>
+                 <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase leading-none">Load Profile</h3>
                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Real-time disaggregation</p>
               </div>
            </div>
            <Info size={18} className="text-slate-200 hidden sm:block" />
         </div>
 
-        <div className="h-[280px] sm:h-[350px] md:h-[450px] w-full">
+        <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ bottom: 40, left: -20, right: 10 }}>
+            <AreaChart data={chartData} margin={{ bottom: 0, left: -20, right: 0, top: 10 }}>
               <defs>
                 <linearGradient id="usageGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#d97706" stopOpacity={0.3}/><stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
@@ -69,68 +91,87 @@ function DeviceEnergyCharts({ devices, activeCount }: Props) {
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 800}} 
-                angle={-45} 
-                textAnchor="end" 
-                height={70} 
-                interval={window.innerWidth < 768 ? 1 : 0} // Hides every other label on mobile to fix "mess"
+                tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} 
+                interval={0} // Show all labels
+                angle={-45}
+                textAnchor="end"
+                height={60}
                 tickFormatter={formatXAxis}
               />
-              <Tooltip content={<CustomTooltip total={total} />} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#d97706', strokeWidth: 1, strokeDasharray: '4 4' }} />
               <Area 
                 type="monotone" 
                 dataKey="value" 
                 stroke="#d97706" 
-                strokeWidth={window.innerWidth < 768 ? 3 : 5} 
+                strokeWidth={3} 
                 fill="url(#usageGradient)" 
-                animationDuration={2000} 
-                activeDot={{ r: 6, fill: '#d97706', stroke: '#fff', strokeWidth: 2 }} 
+                animationDuration={1500} 
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 2. RESOURCE MIX */}
-      <div className="premium-card p-5 md:p-14">
-        <div className="flex items-center gap-3 md:gap-4 mb-8 md:mb-12">
-           <div className="p-2.5 md:p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200"><PieIcon size={20} /></div>
+      {/* 2. RESOURCE MIX (Pie Chart with Scrollable Legend) */}
+      <div className="premium-card p-5 md:p-10 flex flex-col">
+        <div className="flex items-center gap-3 mb-6">
+           <div className="p-2.5 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200"><PieIcon size={20} /></div>
            <div>
-              <h3 className="text-lg md:text-xl font-black text-slate-900 tracking-tight uppercase leading-none">Mix Analysis</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Sensor Intelligence</p>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase leading-none">Mix Analysis</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">
+                {activeCount} Active Nodes
+              </p>
            </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row items-center gap-10 md:gap-16">
-          <div className="relative h-[220px] sm:h-[280px] md:h-[350px] w-full xl:w-1/2 flex items-center justify-center">
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-               <span className="text-5xl md:text-8xl font-black text-slate-900 tracking-tighter leading-none">{activeCount}</span>
-               <span className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-[0.3em] mt-3">Devices</span>
-            </div>
+        <div className="flex flex-col xl:flex-row items-center gap-8 h-full">
+          {/* Chart Circle */}
+          <div className="relative h-[250px] w-full xl:w-1/2 flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} innerRadius="72%" outerRadius="98%" paddingAngle={6} dataKey="percent" stroke="none" cornerRadius={10}>
-                  {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="hover:opacity-80 transition-opacity" />)}
+                <Pie 
+                  data={pieData} 
+                  innerRadius="60%" 
+                  outerRadius="85%" 
+                  paddingAngle={3} 
+                  dataKey="value" 
+                  stroke="none" 
+                  cornerRadius={6}
+                >
+                  {pieData.map((_, i) => (
+                    <Cell key={`cell-${i}`} fill={COLORS[i]} className="hover:opacity-80 transition-opacity duration-300" />
+                  ))}
                 </Pie>
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            {/* Center Text */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+               <span className="text-4xl font-black text-slate-900 tracking-tighter">{activeCount}</span>
+               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Devices</span>
+            </div>
           </div>
 
-          <div className="w-full xl:w-1/2 space-y-4 md:space-y-5">
-            {pieData.map((d, i) => (
-              <div key={d.name} className="flex flex-col gap-1.5 group cursor-pointer">
-                <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                   <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-lg" style={{ background: COLORS[i % COLORS.length] }} />
-                      <span className="font-extrabold text-slate-600 group-hover:text-slate-900 uppercase tracking-widest truncate max-w-[120px]">{d.name}</span>
+          {/* Scrollable Legend for 16+ Devices */}
+          <div className="w-full xl:w-1/2 h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-3">
+              {pieData.map((d, i) => (
+                <div key={d.name} className="flex items-center justify-between group cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors">
+                   <div className="flex items-center gap-2 overflow-hidden">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i] }} />
+                      <span className="text-[10px] sm:text-xs font-bold text-slate-600 group-hover:text-slate-900 uppercase tracking-wider truncate">
+                        {d.name}
+                      </span>
                    </div>
-                   <span className="font-black text-slate-900 tabular-nums">{d.percent.toFixed(1)}%</span>
+                   <div className="flex items-center gap-2 flex-shrink-0">
+                     <span className="text-[10px] font-medium text-slate-400">{d.value.toFixed(1)} kWh</span>
+                     <span className="text-xs font-black text-slate-900 tabular-nums w-10 text-right">
+                       {d.percent.toFixed(1)}%
+                     </span>
+                   </div>
                 </div>
-                <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden">
-                   <div className="h-full rounded-full transition-all duration-1000 group-hover:opacity-70" style={{ width: `${d.percent}%`, backgroundColor: COLORS[i % COLORS.length] }} />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
