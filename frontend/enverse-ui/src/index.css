@@ -51,3 +51,8 @@ svg { overflow: visible !important; }
     @apply rounded-[1.2rem] p-6;
   }
 }
+.premium-card {
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  background: white;
+}

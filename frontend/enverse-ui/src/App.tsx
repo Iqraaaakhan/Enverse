@@ -41,7 +41,6 @@ function App() {
     )
   }
 
-  /* 🔥 SINGLE SOURCE OF TRUTH (THIS FIXES EVERYTHING) */
   const data = {
     totalEnergy: raw.total_energy_kwh ?? 0,
     activeDevices: raw.active_devices ?? 0,
@@ -71,54 +70,66 @@ function App() {
         </button>
       </div>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR - REDUCED WIDTH TO w-64 */}
       <aside className={`fixed inset-0 z-[100] md:relative transition-transform duration-500 ${
         menuOpen ? "translate-x-0" : "-translate-x-full"
-      } md:translate-x-0 w-80 bg-white border-r border-slate-100 p-8`}>
+      } md:translate-x-0 w-64 bg-white border-r border-slate-100 p-6 flex flex-col`}>
 
         <button onClick={() => setMenuOpen(false)} className="md:hidden absolute top-6 right-6">
           <X size={22} />
         </button>
+        
+        <div className="hidden md:flex items-center gap-2 mb-12 mt-4">
+           <div className="p-2 bg-slate-900 text-white rounded-lg"><Waves size={20} /></div>
+           <h1 className="text-xl font-black italic tracking-tighter text-slate-900">ENVERSE</h1>
+        </div>
 
-        <nav className="space-y-2 mt-20">
+        <nav className="space-y-2 flex-1">
           {nav.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => { setActiveSection(id as Section); setMenuOpen(false) }}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition ${
+              className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold transition-all duration-300 ${
                 activeSection === id
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-400 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white shadow-lg translate-x-1"
+                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
               }`}
             >
               <Icon size={18} />
-              <span className="uppercase tracking-widest text-xs">{label}</span>
+              <span className="uppercase tracking-widest text-[10px] md:text-xs">{label}</span>
             </button>
           ))}
         </nav>
+        
+        <div className="mt-auto pt-6 border-t border-slate-50">
+           <p className="text-[10px] font-bold text-slate-300 text-center uppercase tracking-widest">v2.0 Stable</p>
+        </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-4 sm:p-8 md:p-14 lg:p-20">
+      <main className="flex-1 p-4 sm:p-8 md:p-12 lg:p-16 w-full overflow-x-hidden">
 
-        <header className="mb-16 flex justify-between items-end">
+        <header className="mb-12 md:mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 flex items-center gap-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 flex items-center gap-2 mb-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
               Engine Active
             </p>
-            <h1 className="text-6xl md:text-9xl font-black italic tracking-tighter">
-              EN<span className="text-amber-900 opacity-40">VERSE</span>
+            <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black italic tracking-tighter text-slate-900 leading-[0.8]">
+              EN<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-700/40 to-amber-900/10">VERSE</span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border">
-            <Radio size={14} className="text-amber-600 animate-pulse" />
-            <span className="text-xs font-black uppercase">NILM Scan</span>
+          <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm self-start md:self-auto">
+            <Radio size={16} className="text-amber-600 animate-pulse" />
+            <div className="flex flex-col">
+               <span className="text-[10px] font-black uppercase leading-none">NILM Scan</span>
+               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Live Feed</span>
+            </div>
           </div>
         </header>
 
-        <div className="space-y-16">
+        <div className="space-y-12 md:space-y-16">
           {activeSection === "dashboard" && (
             <>
               <KpiCards

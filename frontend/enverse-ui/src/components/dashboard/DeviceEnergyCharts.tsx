@@ -93,6 +93,7 @@ export default function DeviceEnergyCharts({ devices, activeCount }: Props) {
   rawData.sort((a, b) => b.value - a.value)
   const totalEnergy = rawData.reduce((acc, curr) => acc + curr.value, 0)
 
+  
   // Calculate percentage correctly (0-100 scale)
   const data = rawData.map(item => ({
     ...item,

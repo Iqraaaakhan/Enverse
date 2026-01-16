@@ -16,7 +16,7 @@ function Sidebar({ active, onChange, menuOpen, onClose }: SidebarProps) {
             onClick={onClose}
           />
 
-          <aside className="relative w-64 h-full bg-white p-6 shadow-lg">
+          <aside className="relative w-52 lg:w-56 h-full bg-white p-6 shadow-lg">
             <h2 className="text-sm text-gray-400 mb-4">MENU</h2>
             <MenuList
               active={active}
@@ -31,7 +31,7 @@ function Sidebar({ active, onChange, menuOpen, onClose }: SidebarProps) {
       )}
 
       {/* ---------------- Desktop Sidebar ---------------- */}
-      <aside className="hidden md:block w-64 bg-white p-6 border-r min-h-screen">
+      <aside className="hidden md:block w-52 lg:w-56 bg-white p-6 border-r min-h-screen">
         <h2 className="text-sm text-gray-400 mb-4">MENU</h2>
         <MenuList active={active} onChange={onChange} />
       </aside>
