@@ -8,6 +8,19 @@ from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
 
+import math
+
+def json_safe(obj):
+    if isinstance(obj, float):
+        if math.isinf(obj) or math.isnan(obj):
+            return 0.0
+        return obj
+    if isinstance(obj, dict):
+        return {k: json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [json_safe(v) for v in obj]
+    return obj
+
 # Ensure backend/ is in PYTHONPATH
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
@@ -18,7 +31,6 @@ from app.services.nlp_engine import process_user_query
 from app.services.predictor import EnergyPredictor
 from app.services.forecast_service import fetch_energy_forecast
 from app.services.data_loader import load_energy_data
-from app.services.energy_calculator import calculate_energy_kwh
 from app.services.anomaly_detector import detect_anomalies
 from app.services.energy_estimation_service import estimate_energy
 from app.services.explainability_service import generate_explanations
@@ -30,6 +42,11 @@ app = FastAPI(
     description="Backend services for the Enverse Energy Intelligence Platform",
     version="2.0.0",
 )
+
+@app.get("/")
+def root():
+    return {"status": "Enverse backend running"}
+
 
 # Middleware
 app.add_middleware(
@@ -59,7 +76,7 @@ def energy_summary():
     Fixes the '6 devices' bug by counting unique devices dynamically.
     """
     raw_data = load_energy_data()
-    calculated = calculate_energy_kwh(raw_data)
+    calculated = raw_data
     
     if not len(calculated):
         return {"total_energy_kwh": 0, "device_wise_energy_kwh": {}}
@@ -94,32 +111,21 @@ def energy_summary():
         "device_wise_energy_kwh": {k: round(v, 2) for k, v in device_summary.items()},
     }
 
+from app.services.data_loader import load_energy_data
+from app.services.anomaly_detector import detect_anomalies
+from app.services.energy_calculator import compute_dashboard_metrics
+
 @app.get("/dashboard")
 def dashboard():
-    """
-    Aggregates data for the main dashboard.
-    Uses energy_summary for accurate totals and anomaly_detector for security.
-    """
-    # 1. Get Accurate Summaries (Fixes the 16 device issue)
-    summary = energy_summary()
-    
-    # 2. Load Data for Anomalies
-    raw_data = load_energy_data()
-    calculated = calculate_energy_kwh(raw_data)
-    
-    # 3. AI Anomaly Detection (Isolation Forest)
-    anomalies = detect_anomalies(calculated)
-    
-    # Filter anomalies to only show recent ones (last 10) to keep UI clean
-    recent_anomalies = anomalies[-10:] if anomalies else []
+    metrics = compute_dashboard_metrics()
+    anomalies = detect_anomalies()
 
     return {
-        "total_energy_kwh": summary["total_energy_kwh"],
-        "active_devices": len(summary["device_wise_energy_kwh"]),
+        **metrics,
+        "anomalies": anomalies,
         "anomaly_count": len(anomalies),
-        "device_wise_energy_kwh": summary["device_wise_energy_kwh"],
-        "anomalies": recent_anomalies
     }
+
 
 @app.get("/api/realtime-forecast")
 def realtime_forecast():

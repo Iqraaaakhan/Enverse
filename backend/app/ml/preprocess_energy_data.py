@@ -14,6 +14,12 @@ df = df.dropna()
 
 # Convert timestamp
 df["timestamp"] = pd.to_datetime(df["timestamp"])
+# -------------------------------------------------
+# Derive day/night flags (REAL, Kaggle-consistent)
+# -------------------------------------------------
+df["hour"] = df["timestamp"].dt.hour
+df["is_day"] = df["hour"].between(6, 18).astype(int)
+df["is_night"] = (1 - df["is_day"])
 
 # Encode occupancy
 df["occupancy_flag"] = df["occupancy_status"].map(

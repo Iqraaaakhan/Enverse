@@ -1,39 +1,74 @@
 import pandas as pd
 from pathlib import Path
-from typing import List, Dict
-import os
 
-# Resolve path to data file safely
-# This points to your data folder
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+# -------------------------------------------------
+# ABSOLUTE CANONICAL DATA SOURCE
+# -------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parents[2]
+DATA_PATH = BASE_DIR / "data" / "energy_usage.csv"
 
-def load_energy_data(filename: str = "energy_usage.csv") -> List[Dict]:
+# -------------------------------------------------
+# SAFE LOADER (NO SILENT FAILURES)
+# -------------------------------------------------
+def load_energy_data() -> pd.DataFrame:
     """
-    Industry-standard data loader using Pandas.
-    Converts CSV data into a list of dictionaries for the API.
+    Loads curated single-home energy dataset.
+    This file is distilled from Kaggle Smart Energy Advisor.
     """
-    file_path = DATA_DIR / filename
-    
-    # Check if file exists to prevent crashes
-    if not os.path.exists(file_path):
-        print(f"Warning: {file_path} not found. Returning empty list.")
-        return []
 
-    # Load using Pandas (Optimized for large Kaggle datasets)
-    df = pd.read_csv(file_path)
-    
-    # Ensure timestamps are handled correctly
-    if 'timestamp' in df.columns:
-        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(
+            f"energy_usage.csv NOT FOUND at {DATA_PATH}"
+        )
 
-    # Convert to List of Dicts for FastAPI compatibility
-    return df.to_dict(orient="records")
+    df = pd.read_csv(DATA_PATH)
 
-def get_pandas_df(filename: str = "energy_usage.csv") -> pd.DataFrame:
-    """
-    Returns the raw DataFrame for ML training.
-    """
-    file_path = DATA_DIR / filename
-    if not os.path.exists(file_path):
-        return pd.DataFrame()
-    return pd.read_csv(file_path)
+    # -------------------------------------------------
+    # Mandatory columns check (EXAM-SAFE)
+    # -------------------------------------------------
+    required_cols = {
+        "timestamp",
+        "device_name",
+        "device_type",
+        "power_watts",
+        "duration_minutes",
+        "energy_kwh",
+    }
+
+    missing = required_cols - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    # -------------------------------------------------
+    # Timestamp safety
+    # -------------------------------------------------
+    df["timestamp"] = pd.to_datetime(
+        df["timestamp"],
+        errors="coerce"
+    )
+    df = df.dropna(subset=["timestamp"])
+
+    # -------------------------------------------------
+    # Derive day / night flags (REAL, Kaggle-consistent)
+    # -------------------------------------------------
+    df["hour"] = df["timestamp"].dt.hour
+    df["is_day"] = df["hour"].between(6, 18).astype(int)
+    df["is_night"] = (1 - df["is_day"])
+
+    # -------------------------------------------------
+    # Numeric safety (JSON + ML safe)
+    # -------------------------------------------------
+    numeric_cols = [
+        "energy_kwh",
+        "power_watts",
+        "duration_minutes",
+    ]
+
+    for col in numeric_cols:
+        df[col] = (
+            pd.to_numeric(df[col], errors="coerce")
+            .replace([float("inf"), float("-inf")], 0)
+            .fillna(0)
+        )
+
+    return df

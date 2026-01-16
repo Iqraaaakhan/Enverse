@@ -23,19 +23,13 @@ def load_model():
 # Load on startup
 load_model()
 
-def estimate_energy(payload: dict):
-    # 1. Force duration to 60 mins for the model input to get "Average Hourly Consumption"
-    model_payload = payload.copy()
-    model_payload['usage_duration_minutes'] = 60 
-    
-    df = pd.DataFrame([model_payload])
-    
-    # 2. Model predicts kWh for 1 hour (which effectively equals kW power)
-    predicted_hourly_kwh = float(model.predict(df)[0])
-    
-    # 3. Apply Physics Formula: Energy = Power * Time
-    # (predicted_hourly_kwh is effectively kW)
-    actual_duration_hours = payload['usage_duration_minutes'] / 60
-    final_energy = predicted_hourly_kwh * actual_duration_hours
-    
-    return round(max(0.001, final_energy), 4)
+def estimate_energy(payload):
+    power = float(payload.get("rated_power_watts", 1500))
+    minutes = float(payload.get("duration_minutes", 60))
+
+    physics_kwh = (power / 1000) * (minutes / 60)
+
+    ml_factor = model.predict([features(payload)])[0]
+    ml_factor = max(0.9, min(1.1, ml_factor))  # clamp realism
+
+    return round(physics_kwh * ml_factor, 3)

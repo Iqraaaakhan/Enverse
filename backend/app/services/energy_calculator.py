@@ -1,23 +1,33 @@
-from typing import List, Dict
+from app.services.data_loader import load_energy_data
 
+def compute_dashboard_metrics():
+    df = load_energy_data()
 
-def calculate_energy_kwh(records: List[Dict]) -> List[Dict]:
-    """
-    Adds energy_kwh field to each record.
-    Formula:
-    energy (kWh) = (power_watts × duration_minutes) / (1000 × 60)
-    """
-    enriched = []
+    if df.empty:
+        return {
+            "total_energy_kwh": 0,
+            "active_devices": 0,
+            "device_wise_energy_kwh": {},
+            "night_usage_percent": 0
+        }
 
-    for row in records:
-        power_watts = float(row["power_watts"])
-        duration_minutes = float(row["duration_minutes"])
+    # DEVICE-WISE AGGREGATION (THIS FEEDS YOUR CHARTS)
+    device_energy = (
+        df.groupby("device_name")["energy_kwh"]
+        .sum()
+        .round(3)
+        .to_dict()
+    )
 
-        energy_kwh = (power_watts * duration_minutes) / (1000 * 60)
+    total_energy = float(sum(device_energy.values()))
+    active_devices = len(device_energy)
 
-        new_row = row.copy()
-        new_row["energy_kwh"] = round(energy_kwh, 4)
+    night_energy = df[df["is_night"] == 1]["energy_kwh"].sum()
+    night_percent = round((night_energy / total_energy) * 100, 2) if total_energy > 0 else 0
 
-        enriched.append(new_row)
-
-    return enriched
+    return {
+        "total_energy_kwh": round(total_energy, 2),
+        "active_devices": active_devices,
+        "device_wise_energy_kwh": device_energy,
+        "night_usage_percent": night_percent
+    }
