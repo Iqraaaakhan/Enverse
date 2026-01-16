@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Kaggle dataset (keep locally, do not push)
+backend/data/smart_home_energy_usage_dataset.csv
+
+# ML model binaries (never push)
+backend/app/ml/models/*.pkl
