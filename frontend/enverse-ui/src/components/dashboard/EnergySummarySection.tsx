@@ -1,4 +1,5 @@
 import { Zap, BarChart3 } from "lucide-react"
+import AiReasoningPanel from "./AiReasoningPanel"
 
 type Props = {
   devices: Record<string, number>
@@ -53,6 +54,9 @@ export default function EnergySummarySection({ devices }: Props) {
                 <span className="text-amber-600 text-xs">kWh</span>
               </span>
             </div>
+<div className="mt-8">
+  <AiReasoningPanel />
+</div>
 
             <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
               <div
@@ -61,6 +65,7 @@ export default function EnergySummarySection({ devices }: Props) {
               />
             </div>
           </div>
+          
         ))}
       </div>
     </div>

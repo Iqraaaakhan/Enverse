@@ -10,6 +10,7 @@ from typing import Dict, Any
 from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from app.services.data_loader import load_energy_data
 
 # -------------------------------------------------------------------
 # Utility
@@ -61,10 +62,9 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# 🔴 REQUIRED FOR WHAT-IF BUTTON (CORS FIX)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -236,3 +236,120 @@ def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
         return {"estimated_kwh": 0.0, "error": str(e)}
 
     return {"estimated_kwh": json_safe(estimated_kwh)}
+
+@app.get("/energy/ai-insights")
+def ai_insights():
+    """
+    Explainable AI layer combining:
+    - NILM disaggregation
+    - Forecast statistics
+    - Rule-based ML reasoning
+    """
+
+    forecast = fetch_energy_forecast()
+    nilm = explain_energy_usage()
+
+    insights = []
+
+    # 1. NILM insight
+    if "device_breakdown" in nilm:
+        top_device = max(
+            nilm["device_breakdown"].items(),
+            key=lambda x: x[1]
+        )
+        insights.append(
+            f"{top_device[0]} contributes {round(top_device[1],1)}% of total energy usage."
+        )
+
+    # 2. Night usage anomaly
+    if nilm.get("night_usage_ratio", 0) > 1.5:
+        insights.append(
+            "Night-time energy usage is significantly higher than daytime, indicating extended cooling usage."
+        )
+
+    # 3. Contextual comparison
+    monthly_kwh = forecast.get("forecast", {}).get("next_month_kwh")
+    if monthly_kwh and monthly_kwh > 350:
+        insights.append(
+            "Your monthly usage is higher than the average Indian household (250–350 kWh)."
+        )
+
+    # 4. Recommendation (derived, not random)
+    if monthly_kwh:
+        night_ratio = nilm.get("night_usage_ratio", 1)
+        reduction_factor = min((night_ratio - 1) * 0.05, 0.15)
+        savings = round((monthly_kwh * reduction_factor) * 8.5, 0)
+
+
+    return {
+        "ai_insights": insights
+    }
+
+@app.get("/energy/ai-timeline")
+def ai_energy_timeline():
+    """
+    Explainable AI Timeline
+    Uses REAL CSV data (Pandas-safe)
+    """
+
+    df = load_energy_data()
+
+    # ---- SAFETY CHECK (FIXES 500 ERROR) ----
+    if df is None or df.empty:
+        return {
+            "delta_kwh": 0,
+            "delta_cost": 0,
+            "primary_device": "N/A",
+            "ai_explanation": ["Not enough historical data available yet."]
+        }
+
+    # ---- SORT BY TIME (CRITICAL) ----
+    if "timestamp" in df.columns:
+        df = df.sort_values("timestamp")
+
+    # ---- SPLIT DATA ----
+    last_30 = df.tail(30 * 24)
+    prev_30 = df.iloc[-60 * 24:-30 * 24]
+
+    last_kwh = last_30["energy_kwh"].sum()
+    prev_kwh = prev_30["energy_kwh"].sum()
+
+    delta_kwh = round(last_kwh - prev_kwh, 2)
+    delta_cost = round(delta_kwh * 8.5, 2)
+
+    # ---- NILM DEVICE ATTRIBUTION ----
+    device_usage = (
+        last_30.groupby("device_name")["energy_kwh"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+
+    primary_device = device_usage.index[0]
+
+    # ---- NLP EXPLANATION ----
+    explanation = []
+
+    if delta_kwh > 0:
+        explanation.append(
+            f"Your energy usage increased by {delta_kwh} kWh compared to the previous month."
+        )
+        explanation.append(
+            f"The primary contributor was {primary_device}, indicating extended usage."
+        )
+        explanation.append(
+            f"This led to an estimated bill increase of ₹{abs(delta_cost)}."
+        )
+    else:
+        explanation.append(
+            f"Your energy usage decreased by {abs(delta_kwh)} kWh compared to the previous month."
+        )
+        explanation.append(
+            "This reflects improved energy efficiency."
+        )
+
+    return {
+        "delta_kwh": delta_kwh,
+        "delta_cost": delta_cost,
+        "primary_device": primary_device,
+        "ai_explanation": explanation
+    }
