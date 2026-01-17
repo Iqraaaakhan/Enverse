@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Brain, Sparkles } from "lucide-react"
+import { Brain, CheckCircle2 } from "lucide-react"
 
 type InsightResponse = {
   ai_insights: string[]
@@ -20,39 +20,31 @@ export default function AiReasoningPanel() {
   }, [])
 
   return (
-    <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 rounded-xl bg-amber-600 text-white">
-          <Brain size={18} />
-        </div>
-        <div>
-          <h3 className="font-black uppercase text-sm tracking-widest">
-            AI Reasoning
-          </h3>
-          <p className="text-xs text-slate-400">
-            Explainable insights derived from ML & NILM
-          </p>
-        </div>
+    <div className="h-full p-4 md:p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Brain size={16} className="text-slate-400" />
+        <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Pattern Recognition</h4>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-slate-400 animate-pulse">
-          Analyzing energy behavior…
-        </p>
-      ) : insights.length ? (
-        <ul className="space-y-3 text-sm text-slate-600">
-          {insights.map((insight, i) => (
-            <li key={i} className="flex gap-2">
-              <Sparkles size={14} className="text-amber-500 mt-1" />
-              <span>{insight}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-slate-400">
-          No insights available at this moment.
-        </p>
-      )}
+      <div className="space-y-3">
+        {loading ? (
+          <div className="flex items-center gap-3 text-xs font-bold text-slate-400 animate-pulse">
+            <div className="w-2 h-2 bg-slate-400 rounded-full" />
+            Processing Neural Patterns...
+          </div>
+        ) : insights.length ? (
+          insights.map((insight, i) => (
+            <div key={i} className="flex gap-3 group">
+              <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+              <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                {insight}
+              </p>
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-slate-400 italic">System calibrating...</p>
+        )}
+      </div>
     </div>
   )
 }

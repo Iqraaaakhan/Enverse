@@ -7,7 +7,8 @@ import {
   X,
   Radio,
   Waves,
-  FileBarChart
+  FileBarChart,
+  Activity
 } from "lucide-react"
 import type { DashboardResponse } from "./types/dashboard"
 
@@ -16,8 +17,7 @@ import DeviceEnergyCharts from "./components/dashboard/DeviceEnergyCharts"
 import EnergySummarySection from "./components/dashboard/EnergySummarySection"
 import AnomalySection from "./components/dashboard/AnomalySection"
 import PredictionSection from "./components/dashboard/PredictionSection"
-import AiReasoningPanel from "./components/dashboard/AiReasoningPanel"
-import AiEnergyTimeline from "./components/dashboard/AiEnergyTimeline"
+import AiIntelligenceHub from "./components/dashboard/AiIntelligenceHub"
 
 import ChatBot from "./components/dashboard/ChatBot"
 
@@ -27,7 +27,12 @@ function App() {
   const [raw, setRaw] = useState<DashboardResponse | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<Section>("dashboard")
+  
+  // REAL BACKEND STATUS STATE
+  const [systemStatus, setSystemStatus] = useState("Offline")
+  const [aiStatus, setAiStatus] = useState("Inactive")
 
+  // 1. Fetch Dashboard Data
   useEffect(() => {
     fetch("http://127.0.0.1:8000/dashboard")
       .then(res => res.json())
@@ -35,10 +40,24 @@ function App() {
       .catch(console.error)
   }, [])
 
+  // 2. Fetch System Health (REAL BACKEND CONNECTION)
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/health")
+      .then(res => res.json())
+      .then(data => {
+        setSystemStatus(data.status === "ok" ? "Online" : "Error")
+        setAiStatus(data.ai_models === "active" ? "Active" : "Loading")
+      })
+      .catch(() => {
+        setSystemStatus("Offline")
+        setAiStatus("Unreachable")
+      })
+  }, [])
+
   if (!raw) {
     return (
-      <div className="h-screen flex items-center justify-center font-black text-amber-600 animate-pulse bg-[#fcfaf7] tracking-[0.4em]">
-        ENVERSE
+      <div className="h-screen flex items-center justify-center font-black text-amber-600 animate-pulse bg-[#fcfaf7] tracking-[0.4em] text-2xl">
+        ENVERSE AI
       </div>
     )
   }
@@ -59,40 +78,33 @@ function App() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#fdfcfb] w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#fdfcfb] w-full overflow-x-hidden font-sans text-slate-900 bg-grid-pattern">
 
       {/* MOBILE TOP BAR */}
-      <div className="md:hidden flex justify-between items-center p-4 bg-white border-b border-slate-100 sticky top-0 z-[60]">
+      <div className="md:hidden flex justify-between items-center p-4 bg-white border-b border-slate-100 sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <Waves size={20} />
-          <h1 className="font-black uppercase italic">ENVERSE</h1>
+          <Waves size={24} className="text-slate-900" />
+          <h1 className="font-black uppercase italic text-xl tracking-tighter">ENVERSE</h1>
         </div>
         <button
-          onClick={() => setMenuOpen(true)}
+          onClick={() => setMenuOpen(!menuOpen)}
           className="p-2 bg-slate-900 text-white rounded-lg"
         >
-          <Menu size={20} />
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR (Shrunk to w-56 for more chart space) */}
       <aside
-        className={`fixed inset-0 z-[100] md:relative transition-transform duration-500 ${
+        className={`fixed inset-y-0 left-0 z-40 transform ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 w-64 bg-white border-r border-slate-100 p-6 flex flex-col`}
+        } md:translate-x-0 md:relative w-56 bg-white border-r border-slate-100 p-4 flex flex-col transition-transform duration-300 ease-in-out h-screen shadow-xl md:shadow-none`}
       >
-        <button
-          onClick={() => setMenuOpen(false)}
-          className="md:hidden absolute top-6 right-6"
-        >
-          <X size={22} />
-        </button>
-
-        <div className="hidden md:flex items-center gap-2 mb-12 mt-4">
-          <div className="p-2 bg-slate-900 text-white rounded-lg">
-            <Waves size={20} />
+        <div className="hidden md:flex items-center gap-3 mb-10 mt-4 px-2">
+          <div className="p-2 bg-slate-900 text-white rounded-lg shadow-md">
+            <Waves size={22} />
           </div>
-          <h1 className="text-xl font-black italic tracking-tighter text-slate-900">
+          <h1 className="text-2xl font-black italic tracking-tighter text-slate-900">
             ENVERSE
           </h1>
         </div>
@@ -105,76 +117,81 @@ function App() {
                 setActiveSection(id as Section)
                 setMenuOpen(false)
               }}
-              className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold transition-all duration-300 ${
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all duration-200 group ${
                 activeSection === id
-                  ? "bg-slate-900 text-white shadow-lg translate-x-1"
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                  ? "bg-slate-900 text-white shadow-lg"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <Icon size={18} />
-              <span className="uppercase tracking-widest text-[10px] md:text-xs">
+              <Icon size={20} className={activeSection === id ? "text-amber-400" : "text-slate-400 group-hover:text-slate-900"} />
+              <span className="uppercase tracking-wider text-xs">
                 {label}
               </span>
             </button>
           ))}
         </nav>
 
+        {/* REAL BACKEND STATUS WIDGET */}
         <div className="mt-auto pt-6 border-t border-slate-50">
-          <p className="text-[10px] font-bold text-slate-300 text-center uppercase tracking-widest">
-            v2.0 Stable
-          </p>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="flex justify-between items-center mb-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Engine Status</p>
+                <Activity size={14} className={systemStatus === "Online" ? "text-emerald-500" : "text-rose-500"} />
+            </div>
+            <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${systemStatus === "Online" ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}></span>
+                <span className="text-sm font-bold text-slate-700">{systemStatus}</span>
+            </div>
+            <div className="text-[10px] text-slate-400 mt-1 font-medium">
+                AI Models: {aiStatus}
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-4 sm:p-8 md:p-12 lg:p-16 w-full overflow-x-hidden">
-        <header className="mb-12 md:mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 w-full overflow-x-hidden h-screen overflow-y-auto">
+        
+        {/* HEADER - RESTORED TO "DASHBOARD" */}
+        <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 flex items-center gap-2 mb-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-              Engine Active
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">
+              Dashboard
+            </h2>
+            <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full" />
+              Real-time Energy Intelligence
             </p>
-            <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black italic tracking-tighter text-slate-900 leading-[0.8]">
-              EN
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-700/40 to-amber-900/10">
-                VERSE
-              </span>
-            </h1>
           </div>
 
-          <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm">
-            <Radio size={16} className="text-amber-600 animate-pulse" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase leading-none">
-                NILM Scan
-              </span>
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
-                Live Feed
-              </span>
-            </div>
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm">
+                <Radio size={16} className="text-amber-600 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider">NILM Active</span>
+             </div>
           </div>
         </header>
 
-        <div className="space-y-12 md:space-y-16">
-       <>
-  <KpiCards
-    totalEnergy={data.totalEnergy}
-    activeDevices={data.activeDevices}
-    anomalies={data.anomalyCount}
-  />
+        {/* DYNAMIC CONTENT AREA */}
+        <div className="space-y-6 pb-20">
+          
+          {activeSection === "dashboard" && (
+            <div className="flex flex-col gap-6">
+              
+              {/* 1. KPIs (Top Row) - Compacted */}
+              <KpiCards />
 
-  <AiReasoningPanel />
+              {/* 2. CHARTS (Side by Side) */}
+              <DeviceEnergyCharts 
+                devices={data.deviceEnergy} 
+                activeCount={data.activeDevices} 
+              />
 
-  {/* FEATURE 2: Explainable AI Timeline */}
-  <AiEnergyTimeline />
-
-  <DeviceEnergyCharts
-    devices={data.deviceEnergy}
-    activeCount={data.activeDevices}
-  />
-</>
-
-
+              {/* 3. AI CONSOLE (Bottom Row) - Fog Removed */}
+              <AiIntelligenceHub />
+              
+            </div>
+          )}
 
           {activeSection === "summary" && (
             <EnergySummarySection devices={data.deviceEnergy} />
