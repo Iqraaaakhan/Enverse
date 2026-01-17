@@ -152,7 +152,7 @@ export default function PredictionSection() {
 
             <button
               onClick={runWhatIf}
-  disabled={loading || !duration}
+              disabled={loading}
               className="mt-6 bg-slate-900 text-white px-8 py-3 rounded-xl font-black"
             >
               {loading ? "Predicting…" : "Predict Impact"}
@@ -187,13 +187,16 @@ export default function PredictionSection() {
           </div>
 
           {/* AI OBS */}
-          <div className="bg-white rounded-3xl p-6 border">
-            <h4 className="font-black uppercase text-sm mb-3 flex gap-2">
+          <div className="bg-white rounded-3xl p-8 border">
+            <h4 className="font-black uppercase text-sm mb-4 flex gap-2">
               <Brain size={16} /> AI Observations
             </h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               {observations.map((o, i) => (
-                <li key={i}>• {o}</li>
+                <li key={i} className="flex gap-3 items-start">
+                  <span className="text-amber-500 font-bold mt-1">•</span>
+                  <span className="text-slate-700 font-medium leading-relaxed">{o}</span>
+                </li>
               ))}
             </ul>
           </div>
