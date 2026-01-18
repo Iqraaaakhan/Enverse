@@ -23,15 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
-# Kaggle dataset (keep locally, do not push)
+# Raw Kaggle dataset (local only)
 backend/data/smart_home_energy_usage_dataset.csv
 
-# ML model binaries (never push)
-backend/app/ml/models/*.pkl
-
-# ML generated artifacts
-backend/app/ml/model_metrics.json
+# ML model binaries (local only)
 backend/app/ml/models/
 
 # Generated metrics
 backend/app/ml/metrics.json
+backend/app/ml/model_metrics.json
+

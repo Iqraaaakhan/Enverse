@@ -1,3 +1,14 @@
+"""
+LEGACY FILE — NOT USED
+
+This script was part of an early prototype.
+The active ETL pipeline is:
+backend/app/services/data_processor.py
+
+This file is intentionally retained for history
+but must NOT be used in production or training.
+"""
+
 # backend/ml/preprocess_energy_data.py
 
 import pandas as pd
