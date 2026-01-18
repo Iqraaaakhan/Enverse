@@ -1,11 +1,12 @@
 import { ShieldAlert, Clock, AlertTriangle } from "lucide-react"
+// ✅ IMPORT THE ALIAS UTILITY
+import { getDeviceDisplayName } from "../../utils/deviceAliases"
 
-// Updated Type Definition to support AI Dynamic thresholds
 type Anomaly = {
   timestamp: string; 
   device_name: string; 
   energy_kwh: number; 
-  threshold_kwh: number | string; // Changed to allow "AI-Dynamic"
+  threshold_kwh: number | string;
   reason: string;
 }
 
@@ -41,7 +42,8 @@ function AnomalySection({ anomalies }: { anomalies: Anomaly[] }) {
                         <span className="px-2 py-0.5 bg-rose-100 text-rose-600 text-[8px] font-black uppercase tracking-widest rounded-full leading-none">Breach</span>
                         <span className="text-slate-400 text-[9px] font-bold flex items-center gap-1"><Clock size={10} /> {a.timestamp}</span>
                      </div>
-                     <h4 className="text-xl font-black text-slate-900 leading-none">{a.device_name}</h4>
+                     {/* ✅ APPLY ALIAS HERE */}
+                     <h4 className="text-xl font-black text-slate-900 leading-none">{getDeviceDisplayName(a.device_name)}</h4>
                   </div>
                </div>
                

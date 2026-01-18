@@ -82,13 +82,15 @@ export default function KpiCards() {
         sub="NILM Disaggregated"
       />
 
-      <Card
+     <Card
         title="Security"
         value={anomalies}
         icon={ShieldCheck}
         color="bg-rose-400"
-        sub={anomalies > 0 ? "Threats Detected" : "System Secure"}
+        // FIXED: Changed "Threats Detected" to "System Alerts" for academic accuracy
+        sub={anomalies > 0 ? "System Alerts" : "System Secure"}
       />
+
 
       <Card
         title="Night Load"

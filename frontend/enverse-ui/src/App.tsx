@@ -165,11 +165,19 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-             <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm">
-                <Radio size={16} className="text-amber-600 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-wider">NILM Active</span>
+             <div className="relative group flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm cursor-default hover:shadow-md transition-all duration-300">
+                <Radio size={16} className="text-emerald-500 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+                  NILM Active
+                </span>
+
+                {/* FIXED: Slimmer, positioned left to avoid overlap */}
+                <div className="absolute top-full right-0 mt-2 w-48 p-3 bg-white border border-slate-100 text-slate-500 text-[9px] font-bold uppercase tracking-widest rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-y-0 translate-y-1 pointer-events-none z-50 text-center leading-tight">
+                  Appliance-level energy disaggregation enabled.
+                </div>
              </div>
           </div>
+
         </header>
 
         {/* DYNAMIC CONTENT AREA */}

@@ -28,3 +28,10 @@ backend/data/smart_home_energy_usage_dataset.csv
 
 # ML model binaries (never push)
 backend/app/ml/models/*.pkl
+
+# ML generated artifacts
+backend/app/ml/model_metrics.json
+backend/app/ml/models/
+
+# Generated metrics
+backend/app/ml/metrics.json

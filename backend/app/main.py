@@ -1,6 +1,3 @@
-# Folder: backend/app
-# File: main.py
-
 import sys
 import math
 import datetime
@@ -10,7 +7,7 @@ from typing import Dict, Any
 from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from app.services.data_loader import load_energy_data
+import pandas as pd 
 
 # -------------------------------------------------------------------
 # Utility
@@ -38,7 +35,7 @@ if str(BASE_DIR) not in sys.path:
 
 
 # -------------------------------------------------------------------
-# Service Imports (REAL ML / NLP / NILM)
+# Service Imports
 # -------------------------------------------------------------------
 
 from app.services.nlp_engine import process_user_query
@@ -50,6 +47,8 @@ from app.services.energy_estimation_service import estimate_energy
 from app.services.explainability_service import generate_explanations
 from app.services.nilm_explainer import explain_energy_usage
 from app.services.energy_calculator import compute_dashboard_metrics
+from app.ml.metrics import get_latest_metrics
+from app.services.shap_engine import explain_prediction_shap
 
 
 # -------------------------------------------------------------------
@@ -93,46 +92,14 @@ class ChatQuery(BaseModel):
 
 
 # -------------------------------------------------------------------
-# Global ML Model (Loaded ONCE)
+# Global ML Model
 # -------------------------------------------------------------------
 
 predictor = EnergyPredictor()
 
 
 # -------------------------------------------------------------------
-# Energy Summary (REAL DATA)
-# -------------------------------------------------------------------
-
-@app.get("/energy/summary")
-def energy_summary():
-    raw_data = load_energy_data()
-
-    if not raw_data:
-        return {"total_energy_kwh": 0, "device_wise_energy_kwh": {}}
-
-    unique_devices = set(item["device_name"] for item in raw_data)
-    device_count = max(len(unique_devices), 1)
-
-    total_records = len(raw_data)
-    estimated_days = max((total_records / device_count) / 24, 1)
-
-    device_summary = {}
-    for item in raw_data:
-        device = item["device_name"]
-        device_summary[device] = device_summary.get(device, 0) + (
-            item["energy_kwh"] / estimated_days * 30
-        )
-
-    total_monthly_kwh = sum(device_summary.values())
-
-    return {
-        "total_energy_kwh": round(total_monthly_kwh, 2),
-        "device_wise_energy_kwh": {k: round(v, 2) for k, v in device_summary.items()},
-    }
-
-
-# -------------------------------------------------------------------
-# Dashboard
+# Dashboard (Single Source of Truth)
 # -------------------------------------------------------------------
 
 @app.get("/dashboard")
@@ -148,7 +115,7 @@ def dashboard():
 
 
 # -------------------------------------------------------------------
-# Real-Time Forecast (ML)
+# Real-Time Forecast
 # -------------------------------------------------------------------
 
 @app.get("/api/realtime-forecast")
@@ -158,7 +125,7 @@ def realtime_forecast():
 
 
 # -------------------------------------------------------------------
-# Energy Forecast (ML + NILM)
+# Energy Forecast
 # -------------------------------------------------------------------
 
 @app.get("/energy/forecast")
@@ -187,20 +154,11 @@ def chat_endpoint(query: ChatQuery):
 
 
 # -------------------------------------------------------------------
-# 🔥 WHAT-IF ANALYSIS — THIS IS WHAT WAS BROKEN
+# What-If Analysis
 # -------------------------------------------------------------------
 
 @app.post("/api/estimate-energy")
 def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
-    """
-    REAL ML What-If endpoint.
-    Fixes:
-    - CORS
-    - HVAC label mismatch
-    - 500 Internal Server Error
-    """
-
-    # ------------------ VALIDATE INPUT ------------------
     appliance = payload.get("appliance")
     duration = payload.get("usage_duration_minutes")
     power = payload.get("power_watts")
@@ -208,7 +166,6 @@ def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
     if not appliance or not duration:
         return {"estimated_kwh": 0.0}
 
-    # ------------------ NORMALIZE APPLIANCE (CRITICAL FIX) ------------------
     appliance_map = {
         "Air Conditioner (HVAC)": "HVAC",
         "AC": "HVAC",
@@ -222,7 +179,6 @@ def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
 
     appliance = appliance_map.get(appliance, appliance)
 
-    # ------------------ CALL REAL ML SERVICE ------------------
     try:
         estimated_kwh = estimate_energy(
             {
@@ -232,83 +188,105 @@ def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
             }
         )
     except Exception as e:
-        # NEVER crash frontend
         return {"estimated_kwh": 0.0, "error": str(e)}
 
     return {"estimated_kwh": json_safe(estimated_kwh)}
 
+
+# -------------------------------------------------------------------
+# 🔥 AI INSIGHTS (MATHEMATICALLY CORRECT)
+# -------------------------------------------------------------------
+
 @app.get("/energy/ai-insights")
 def ai_insights():
     """
-    Explainable AI Insights - Pattern Recognition
-    Uses real data, honest device labels, and period-based comparisons
+    Returns structured insight objects.
+    ✅ FIXED: Uses Daily Rate Comparison (kWh/day) to handle partial periods correctly.
     """
-
-    forecast = fetch_energy_forecast()
-    nilm = explain_energy_usage()
-
+    
+    # 1. GET CURRENT OBSERVED DATA
+    metrics = compute_dashboard_metrics()
+    total_energy = metrics.get("total_energy_kwh", 0)
+    device_breakdown = metrics.get("device_wise_energy_kwh", {})
+    night_percent = metrics.get("night_usage_percent", 0)
+    
     insights = []
 
-    # === INSIGHT 1: TOP DEVICE (FROM REAL NILM DATA) ===
-    if "device_wise_energy_kwh" in nilm:
-        device_breakdown = nilm["device_wise_energy_kwh"]
-        total_energy = nilm.get("total_energy_kwh", 0)
+    # === INSIGHT 1: DOMINANT LOAD ===
+    if device_breakdown and total_energy > 0:
+        top_device = max(device_breakdown.items(), key=lambda x: x[1])
         
-        if device_breakdown and total_energy > 0:
-            top_device = max(device_breakdown.items(), key=lambda x: x[1])
-            top_name = top_device[0]
-            top_percentage = round((top_device[1] / total_energy) * 100, 1)
-            
-            insights.append(
-                f"🔌 {top_name} is the largest consumption category at {top_percentage}% of total energy."
-            )
+        insights.append({
+            "type": "dominant_load",
+            "device": top_device[0], 
+            "value": top_device[1],
+            "percentage": round((top_device[1] / total_energy) * 100, 1)
+        })
 
-    # === INSIGHT 2: HOUSEHOLD COMPARISON (DYNAMIC, PERIOD-BASED) ===
-    monthly_kwh = forecast.get("forecast", {}).get("next_month_kwh", 0)
-    
-    if monthly_kwh > 0:
-        avg_indian_min = 250
-        avg_indian_max = 350
-        avg_indian_mid = (avg_indian_min + avg_indian_max) / 2
+    # === INSIGHT 2: CONSUMPTION STATUS (DAILY RATE COMPARISON) ===
+    if total_energy > 0:
+        try:
+            full_df = load_energy_data()
+            if not full_df.empty and "timestamp" in full_df.columns:
+                full_df["timestamp"] = pd.to_datetime(full_df["timestamp"])
+                
+                # A. Historical Daily Rate (The Baseline)
+                hist_days = max((full_df["timestamp"].max() - full_df["timestamp"].min()).days, 1)
+                hist_total = full_df["energy_kwh"].sum()
+                hist_daily_rate = hist_total / hist_days
+                
+                # B. Current Period Daily Rate
+                # We replicate the 30-day filter to find exact days in current window
+                latest_date = full_df["timestamp"].max()
+                start_date = latest_date - datetime.timedelta(days=30)
+                current_window_df = full_df[full_df["timestamp"] >= start_date]
+                
+                if not current_window_df.empty:
+                    curr_days = max((current_window_df["timestamp"].max() - current_window_df["timestamp"].min()).days, 1)
+                    curr_daily_rate = total_energy / curr_days
+                    
+                    # C. Compare Rates (110% threshold)
+                    # This correctly flags high intensity even if data is sparse
+                    status = "high" if curr_daily_rate > (hist_daily_rate * 1.1) else "normal"
+                else:
+                    status = "normal"
+            else:
+                status = "normal"
+        except Exception as e:
+            print(f"Insight Calc Error: {e}")
+            status = "normal"
         
-        if monthly_kwh < avg_indian_min:
-            saving_percentage = round(((avg_indian_min - monthly_kwh) / avg_indian_min) * 100, 1)
-            insights.append(
-                f"✅ This billing period's consumption ({monthly_kwh} kWh) is {saving_percentage}% below typical Indian household (250–350 kWh range)."
-            )
-        elif monthly_kwh > avg_indian_max:
-            excess_percentage = round(((monthly_kwh - avg_indian_max) / avg_indian_mid) * 100, 1)
-            insights.append(
-                f"⚠️ This billing period's consumption ({monthly_kwh} kWh) exceeds typical range (250–350 kWh) by {excess_percentage}%."
-            )
-        else:
-            insights.append(
-                f"✓ This billing period's consumption ({monthly_kwh} kWh) is within typical Indian household range (250–350 kWh)."
-            )
+        # Find driver if high
+        driver = None
+        if status == "high" and device_breakdown:
+             driver = max(device_breakdown.items(), key=lambda x: x[1])[0]
 
-    # === INSIGHT 3: MULTI-MONTH HISTORICAL TRENDS ===
-    if "explanations" in nilm and nilm["explanations"]:
-        for explanation in nilm.get("explanations", []):
-            if "night" in explanation.lower() or "day" in explanation.lower():
-                # Make it period-based, not room-specific
-                normalized = explanation.replace("Night-time", "After-hours").replace("night-time", "after-hours")
-                insights.append(f"📊 {normalized}")
-                break
+        insights.append({
+            "type": "consumption_status",
+            "status": status,
+            "total_kwh": total_energy,
+            "driver": driver
+        })
+
+    # === INSIGHT 3: NIGHT USAGE ===
+    insights.append({
+        "type": "night_usage",
+        "percentage": night_percent
+    })
     
     return {
         "ai_insights": insights
     }
 
+
+# -------------------------------------------------------------------
+# AI Timeline (Clean Costing)
+# -------------------------------------------------------------------
+
 @app.get("/energy/ai-timeline")
 def ai_energy_timeline():
-    """
-    Explainable AI Timeline - NILM Attribution
-    Uses REAL CSV data to find which device caused the increase
-    """
-
     df = load_energy_data()
 
-    # ---- SAFETY CHECK ----
     if df is None or df.empty:
         return {
             "delta_kwh": 0,
@@ -317,11 +295,9 @@ def ai_energy_timeline():
             "ai_explanation": ["Not enough historical data available yet."]
         }
 
-    # ---- SORT BY TIME ----
     if "timestamp" in df.columns:
         df = df.sort_values("timestamp")
 
-    # ---- SPLIT DATA INTO TWO PERIODS ----
     last_30 = df.tail(30 * 24)
     prev_30 = df.iloc[-60 * 24:-30 * 24] if len(df) >= 60 * 24 else df.iloc[:0]
 
@@ -329,15 +305,15 @@ def ai_energy_timeline():
     prev_kwh = prev_30["energy_kwh"].sum()
 
     delta_kwh = round(last_kwh - prev_kwh, 2)
-    delta_cost = round(delta_kwh * 8.5, 2)
+    
+    # Standard Tariff for Estimation
+    TARIFF_RATE = 8.5
+    delta_cost = round(delta_kwh * TARIFF_RATE, 2)
 
-    # ---- NILM DEVICE ATTRIBUTION (CORRECT METHOD) ----
-    # If we have previous period data, find which device INCREASED the most
     if len(prev_30) > 0:
         last_by_device = last_30.groupby("device_name")["energy_kwh"].sum()
         prev_by_device = prev_30.groupby("device_name")["energy_kwh"].sum()
         
-        # Calculate delta per device (handles devices only in one period)
         all_devices = set(last_by_device.index) | set(prev_by_device.index)
         delta_by_device = {}
         
@@ -346,50 +322,41 @@ def ai_energy_timeline():
             prev_val = prev_by_device.get(device, 0)
             delta_by_device[device] = round(last_val - prev_val, 2)
         
-        # Find device with largest increase
         if delta_by_device:
             primary_device = max(delta_by_device, key=lambda x: delta_by_device[x])
             primary_device_delta = delta_by_device[primary_device]
-            primary_device_delta_cost = round(primary_device_delta * 8.5, 2)
         else:
             primary_device = "Unknown"
             primary_device_delta = 0
-            primary_device_delta_cost = 0
     else:
-        # Not enough data for comparison, use highest total usage
         device_totals = last_30.groupby("device_name")["energy_kwh"].sum()
         primary_device = device_totals.idxmax() if len(device_totals) > 0 else "Unknown"
         primary_device_delta = 0
-        primary_device_delta_cost = 0
 
-    # ---- GENERATE EXPLANATIONS (PERIOD-BASED, EXAMINER-SAFE) ----
     explanation = []
 
     if delta_kwh > 0:
         explanation.append(
-            f"↗️ Period-over-period change: +{delta_kwh} kWh (+{round((delta_kwh/prev_kwh)*100, 1)}%) compared to previous billing period."
+            f"↗️ Consumption increased by {delta_kwh} kWh compared to the previous period."
         )
         
         if len(prev_30) > 0 and primary_device_delta > 0:
             explanation.append(
-                f"📌 {primary_device} showed the largest increase, contributing +{primary_device_delta} kWh to the period-over-period delta."
+                f"📌 {primary_device} contributed most to this increase (+{primary_device_delta} kWh)."
             )
             explanation.append(
-                f"💰 This consumption category contributed approximately ₹{abs(primary_device_delta_cost)} to the period-over-period bill change."
+                f"💰 Estimated bill impact: +₹{abs(delta_cost)}."
             )
         else:
             explanation.append(
-                f"📌 {primary_device} is the primary consumption category in the current billing period."
-            )
-            explanation.append(
-                f"💰 Total period-over-period bill change: ₹{abs(delta_cost)}."
+                f"💰 Total estimated bill increase: ₹{abs(delta_cost)}."
             )
     else:
         explanation.append(
-            f"↘️ Period-over-period change: {delta_kwh} kWh ({round((delta_kwh/prev_kwh)*100, 1)}%) compared to previous billing period."
+            f"↘️ Consumption decreased by {abs(delta_kwh)} kWh compared to the previous period."
         )
         explanation.append(
-            f"✓ Multi-month trend: Consumption is decreasing. Estimated savings: ₹{abs(delta_cost)}."
+            f"✓ Estimated savings: ₹{abs(delta_cost)}."
         )
 
     return {
@@ -399,10 +366,6 @@ def ai_energy_timeline():
         "ai_explanation": explanation
     }
 
-# ... existing imports ...
-from app.ml.metrics import get_latest_metrics # Add this import
-
-# ... existing code ...
 
 # -------------------------------------------------------------------
 # MLOps / Evaluation Endpoint
@@ -410,23 +373,13 @@ from app.ml.metrics import get_latest_metrics # Add this import
 
 @app.get("/api/model-health")
 def model_health():
-    """
-    Returns the latest evaluation metrics (RMSE, R2, MAE) for all models.
-    """
     return get_latest_metrics()
 
-# ... existing imports ...
-from app.services.shap_engine import explain_prediction_shap # Add this
-
-# ... existing code ...
 
 # -------------------------------------------------------------------
-# Explainability Endpoint (Real SHAP)
+# Explainability Endpoint
 # -------------------------------------------------------------------
 
 @app.post("/api/explain/prediction")
 def explain_prediction(payload: Dict[str, Any] = Body(...)):
-    """
-    Takes prediction inputs and returns SHAP feature importance + NLP.
-    """
     return explain_prediction_shap(payload)
