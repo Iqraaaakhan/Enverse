@@ -28,11 +28,9 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<Section>("dashboard")
   
-  // REAL BACKEND STATUS STATE
   const [systemStatus, setSystemStatus] = useState("Offline")
   const [aiStatus, setAiStatus] = useState("Inactive")
 
-  // 1. Fetch Dashboard Data
   useEffect(() => {
     fetch("http://127.0.0.1:8000/dashboard")
       .then(res => res.json())
@@ -40,7 +38,6 @@ function App() {
       .catch(console.error)
   }, [])
 
-  // 2. Fetch System Health (REAL BACKEND CONNECTION)
   useEffect(() => {
     fetch("http://127.0.0.1:8000/health")
       .then(res => res.json())
@@ -67,7 +64,8 @@ function App() {
     activeDevices: raw.active_devices ?? 0,
     anomalyCount: raw.anomaly_count ?? 0,
     deviceEnergy: raw.device_wise_energy_kwh ?? {},
-    anomalies: raw.anomalies ?? []
+    anomalies: raw.anomalies ?? [],
+    rawRecords: raw.raw_records ?? []
   }
 
   const nav = [
@@ -76,6 +74,16 @@ function App() {
     { id: "anomalies", label: "Security", icon: ShieldAlert },
     { id: "prediction", label: "Predictor", icon: Cpu }
   ]
+
+  // 🟢 DYNAMIC TITLE LOGIC
+  const getPageTitle = () => {
+    switch(activeSection) {
+      case 'summary': return 'Energy Analytics';
+      case 'anomalies': return 'System Security';
+      case 'prediction': return 'AI Forecast';
+      default: return 'Dashboard';
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#fdfcfb] w-full overflow-x-hidden font-sans text-slate-900 bg-grid-pattern">
@@ -94,7 +102,7 @@ function App() {
         </button>
       </div>
 
-      {/* SIDEBAR (Shrunk to w-56 for more chart space) */}
+      {/* SIDEBAR */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 transform ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
@@ -131,7 +139,6 @@ function App() {
           ))}
         </nav>
 
-        {/* REAL BACKEND STATUS WIDGET */}
         <div className="mt-auto pt-6 border-t border-slate-50">
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div className="flex justify-between items-center mb-2">
@@ -152,11 +159,11 @@ function App() {
       {/* MAIN CONTENT */}
       <main className="flex-1 p-4 sm:p-6 md:p-8 w-full overflow-x-hidden h-screen overflow-y-auto">
         
-        {/* HEADER - RESTORED TO "DASHBOARD" */}
+        {/* 🟢 DYNAMIC HEADER */}
         <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">
-              Dashboard
+              {getPageTitle()}
             </h2>
             <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-amber-500 rounded-full" />
@@ -170,11 +177,6 @@ function App() {
                 <span className="text-xs font-black uppercase tracking-wider text-slate-700">
                   NILM Active
                 </span>
-
-                {/* FIXED: Slimmer, positioned left to avoid overlap */}
-                <div className="absolute top-full right-0 mt-2 w-48 p-3 bg-white border border-slate-100 text-slate-500 text-[9px] font-bold uppercase tracking-widest rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-y-0 translate-y-1 pointer-events-none z-50 text-center leading-tight">
-                  Appliance-level energy disaggregation enabled.
-                </div>
              </div>
           </div>
 
@@ -185,24 +187,20 @@ function App() {
           
           {activeSection === "dashboard" && (
             <div className="flex flex-col gap-6">
-              
-              {/* 1. KPIs (Top Row) - Compacted */}
               <KpiCards />
-
-              {/* 2. CHARTS (Side by Side) */}
               <DeviceEnergyCharts 
                 devices={data.deviceEnergy} 
                 activeCount={data.activeDevices} 
               />
-
-              {/* 3. AI CONSOLE (Bottom Row) - Fog Removed */}
               <AiIntelligenceHub />
-              
             </div>
           )}
 
           {activeSection === "summary" && (
-            <EnergySummarySection devices={data.deviceEnergy} />
+            <EnergySummarySection 
+              devices={data.deviceEnergy} 
+              rawRecords={data.rawRecords} 
+            />
           )}
 
           {activeSection === "anomalies" && (
