@@ -87,20 +87,19 @@ export default function ModelHealthPanel() {
               )}
             </div>
 
-            <div className="mb-4">
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reliability</span>
-                <span className={`font-black text-slate-900 tracking-tighter ${isIso ? "text-2xl" : "text-3xl"}`}>
-                  {reliability.toFixed(2)}%
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-1000 ${isHighConf ? 'bg-emerald-500' : 'bg-amber-500'}`} 
-                  style={{ width: `${reliability}%` }}
-                />
-              </div>
-            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+  Model Confidence 
+</p>
+
+<div className="flex items-baseline gap-1">
+  <span className="text-4xl font-black text-slate-900 tracking-tighter">
+    {reliability}%
+  </span>
+</div>
+
+<p className="text-[9px] font-semibold text-slate-400 mt-1">
+  R²-based performance on test data
+</p>
 
             {!isIso ? (
               <div className="grid grid-cols-3 gap-4 border-t border-slate-50 pt-4 mt-auto">

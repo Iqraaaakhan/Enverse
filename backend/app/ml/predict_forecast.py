@@ -1,42 +1,78 @@
-# backend/app/ml/predict_forecast.py
-
 from pathlib import Path
 import joblib
 import pandas as pd
-import os
+import numpy as np
+from datetime import datetime, timedelta
 
-# Resolve paths absolutely to prevent "File Not Found" errors
+# Resolve paths
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "energy_forecast_model.pkl"
+MODEL_PATH = BASE_DIR / "models" / "energy_forecast_model.pkl"
 DATA_PATH = BASE_DIR.parent.parent / "data" / "energy_usage.csv"
 MAE_REPORT_PATH = BASE_DIR / "mae_report.txt"
 
 def get_energy_forecast():
+    """
+    Performs a Recursive Multi-Step Forecast (Rolling Window) on DAILY data.
+    """
     if not MODEL_PATH.exists():
-        return {"status": "error", "mae": "0.00", "forecast": {"next_day_kwh": 0, "next_week_kwh": 0, "next_month_kwh": 0}}
+        return {"status": "error", "message": "Model not found. Run training script."}
 
     model = joblib.load(MODEL_PATH)
     
-    # To provide a 'Household Forecast', we predict a standard 'Active Hour' 
-    # across the typical device mix and scale it.
-    # Features: Power=800W (avg house draw), Duration=60, Night=0, Occupied=1, Temp=22
-    input_data = pd.DataFrame([{
-        "power_watts": 800.0, 
-        "duration_minutes": 60.0,
-        "is_night": 0,
-        "is_occupied": 1,
-        "temp_setting": 22.0
-    }])
+    # 1. Load & Resample History
+    if not DATA_PATH.exists():
+        return {"status": "error", "message": "Data not found"}
 
-    # Predict hourly consumption for the house
-    hourly_pred = float(model.predict(input_data)[0])
+    df = pd.read_csv(DATA_PATH)
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
     
-    # Daily = Hourly * 24 hours
-    # Monthly = Daily * 30 days
-    daily_forecast = hourly_pred * 24
-    monthly_forecast = daily_forecast * 30
+    # Aggregate to Daily (Must match training logic)
+    daily_df = df.set_index('timestamp').resample('D').agg({'energy_kwh': 'sum'}).reset_index()
+    
+    # Buffer for recursive prediction (Need last 14 days for lags)
+    history_buffer = daily_df.tail(14).copy()
+    
+    future_predictions = []
+    last_date = history_buffer.iloc[-1]['timestamp']
+    
+    # 2. Predict Next 7 Days (Recursive Loop)
+    for i in range(1, 8):
+        next_date = last_date + timedelta(days=i)
+        
+        # Calculate Features dynamically from the buffer
+        lag_1 = history_buffer.iloc[-1]['energy_kwh']
+        lag_7 = history_buffer.iloc[-7]['energy_kwh']
+        rolling_7 = history_buffer['energy_kwh'].tail(7).mean()
+        
+        # Input Vector
+        input_row = pd.DataFrame([{
+            'day_of_week': next_date.dayofweek,
+            'day_of_month': next_date.day,
+            'lag_1': lag_1,
+            'lag_7': lag_7,
+            'rolling_mean_7': rolling_7
+        }])
+        
+        # Predict
+        pred_kwh = float(model.predict(input_row)[0])
+        pred_kwh = max(0.0, pred_kwh) # Safety clip
+        
+        # Append prediction to buffer (so next day uses it as lag_1)
+        new_row = pd.DataFrame([{'timestamp': next_date, 'energy_kwh': pred_kwh}])
+        history_buffer = pd.concat([history_buffer, new_row], ignore_index=True)
+        
+        future_predictions.append({
+            "day": next_date.strftime('%a'),
+            "kwh": round(pred_kwh, 2)
+        })
 
-    mae_val = "0.0346"
+    # 3. Calculate Totals
+    next_day = future_predictions[0]['kwh']
+    next_week = sum(p['kwh'] for p in future_predictions)
+    # Projection: Next week * ~4.3 weeks in a month
+    next_month = next_week * 4.3 
+    
+    mae_val = "0.03"
     if MAE_REPORT_PATH.exists():
         with open(MAE_REPORT_PATH, "r") as f:
             mae_val = f.read().strip()
@@ -45,9 +81,9 @@ def get_energy_forecast():
         "status": "ml_prediction",
         "mae": mae_val,
         "forecast": {
-            "next_day_kwh": round(daily_forecast, 2),
-            "next_week_kwh": round(daily_forecast * 7, 2),
-            "next_month_kwh": round(monthly_forecast, 2),
-            "mae": mae_val 
+            "next_day_kwh": round(next_day, 2),
+            "next_week_kwh": round(next_week, 2),
+            "next_month_kwh": round(next_month, 2),
+            "trend_data": future_predictions
         }
     }

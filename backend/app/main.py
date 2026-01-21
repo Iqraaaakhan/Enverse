@@ -128,21 +128,25 @@ def realtime_forecast():
 # Energy Forecast
 # -------------------------------------------------------------------
 
+# ... existing imports ...
+
+# -------------------------------------------------------------------
+# Energy Forecast Endpoint (FIXED)
+# -------------------------------------------------------------------
+
 @app.get("/energy/forecast")
 def energy_forecast():
+    # 1. Fetch the CLEAN forecast data (which now has the correct observations)
     forecast = fetch_energy_forecast()
-    nilm_data = explain_energy_usage()
-
+    
+    # ❌ REMOVED: nilm_data = explain_energy_usage() 
+    # This was the line injecting the "AC is dominant" lie.
+    
     return {
         **json_safe(forecast),
-        "explanations": nilm_data.get("explanations", []),
+        # 2. Map the new 'ai_observations' to the frontend's expected 'explanations' key
+        "explanations": forecast.get("ai_observations", [])
     }
-
-
-@app.get("/energy/explain")
-def explain_energy():
-    return explain_energy_usage()
-
 
 # -------------------------------------------------------------------
 # NLP Chat
@@ -157,41 +161,31 @@ def chat_endpoint(query: ChatQuery):
 # What-If Analysis
 # -------------------------------------------------------------------
 
+# ... imports ...
+
 @app.post("/api/estimate-energy")
 def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
-    appliance = payload.get("appliance")
-    duration = payload.get("usage_duration_minutes")
-    power = payload.get("power_watts")
+    # Extract params
+    appliance = payload.get("appliance", "Unknown") # Critical for duty cycle
+    duration = payload.get("usage_duration_minutes", 0)
+    power = payload.get("power_watts", 0)
 
-    if not appliance or not duration:
-        return {"estimated_kwh": 0.0}
+    # Instantiate Predictor
+    pred_service = EnergyPredictor() 
+    
+    # Get Result
+    result = pred_service.predict_energy(
+        power_watts=power,
+        duration_minutes=duration,
+        appliance=appliance,
+        mode="what_if"
+    )
 
-    appliance_map = {
-        "Air Conditioner (HVAC)": "HVAC",
-        "AC": "HVAC",
-        "HVAC": "HVAC",
-        "Refrigerator": "Refrigerator",
-        "Washing Machine": "Washing Machine",
-        "Geyser": "Geyser",
-        "Smart TV": "Smart TV",
-        "Lighting": "Lighting",
+    return {
+        "estimated_kwh": json_safe(result["energy_kwh"]),
+        "calculation_method": result["method"],
+        "reason": result["reason"]
     }
-
-    appliance = appliance_map.get(appliance, appliance)
-
-    try:
-        estimated_kwh = estimate_energy(
-            {
-                "appliance": appliance,
-                "usage_duration_minutes": float(duration),
-                "power_watts": float(power) if power else None,
-            }
-        )
-    except Exception as e:
-        return {"estimated_kwh": 0.0, "error": str(e)}
-
-    return {"estimated_kwh": json_safe(estimated_kwh)}
-
 
 # -------------------------------------------------------------------
 # 🔥 AI INSIGHTS (MATHEMATICALLY CORRECT)

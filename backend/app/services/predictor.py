@@ -1,88 +1,46 @@
-import joblib
 import pandas as pd
 from pathlib import Path
 
-# -------------------------------------------------
-# Path to trained ML model
-# -------------------------------------------------
-MODEL_PATH = Path(__file__).resolve().parents[1] / "ml" / "energy_forecast_model.pkl"
-
+# ✅ ENGINEERING HEURISTICS (Duty Cycles)
+# Represents the % of time a device draws full rated power during operation.
+DUTY_CYCLES = {
+    "Residential Cooling (AC)": 0.75,   # Compressor cycles
+    "Refrigerator": 0.35,               # Thermostat cycles
+    "Washing Machine": 0.40,            # Motor varies
+    "Consumer Electronics": 0.95,       # Mostly constant
+    "Indoor Lighting Load": 1.00,       # Constant load
+    "Unknown": 1.00
+}
 
 class EnergyPredictor:
-    """
-    Energy prediction service.
-    Uses ML when possible, physics fallback always available.
-    Supports SYSTEM and WHAT-IF modes.
-    """
-
-    def __init__(self):
-        self.model = None
-        self.load_model()
-
-    def load_model(self):
-        if MODEL_PATH.exists():
-            self.model = joblib.load(MODEL_PATH)
-            print("✅ Energy prediction model loaded")
-        else:
-            print("⚠️ ML model not found, physics fallback active")
-
-    def predict_energy(
-        self,
-        power_watts: float,
-        duration_minutes: int,
-        mode: str = "system"  # "system" | "what_if"
-    ) -> dict:
+    def predict_energy(self, power_watts: float, duration_minutes: int, appliance: str, mode: str = "system") -> dict:
         """
-        Predict energy usage.
-
-        system  → realistic, bounded, used by dashboard/KPIs
-        what_if → exploratory, user-driven, hypothetical
+        Calculates energy impact using Physics + Duty Cycle Heuristics.
+        This is deterministic and explainable.
         """
+        # 1. Input Sanitization
+        power_watts = float(power_watts) if power_watts else 0.0
+        duration_minutes = float(duration_minutes) if duration_minutes else 0.0
 
-        # -------------------------------------------------
-        # Physical sanity (ALWAYS enforced)
-        # -------------------------------------------------
-        power_watts = max(50, min(float(power_watts), 3500))
+        if power_watts <= 0 or duration_minutes <= 0:
+            return {"energy_kwh": 0.0, "method": "input_validation", "reason": "Zero input"}
 
-        # -------------------------------------------------
-        # Duration rules
-        # -------------------------------------------------
-        if mode == "system":
-            # real household constraints (max 1 day)
-            duration_minutes = max(1, min(int(duration_minutes), 1440))
-        else:
-            # what-if exploration (no upper bound)
-            duration_minutes = max(1, int(duration_minutes))
+        # 2. Apply Duty Cycle
+        # Match appliance string to heuristic map
+        duty_cycle = 1.0
+        for key, val in DUTY_CYCLES.items():
+            if key in appliance or appliance in key:
+                duty_cycle = val
+                break
 
-        # -------------------------------------------------
-        # Physics baseline (guaranteed)
-        # -------------------------------------------------
-        physics_kwh = (power_watts * duration_minutes) / 60 / 1000
-
-        # -------------------------------------------------
-        # ML prediction (if model available)
-        # -------------------------------------------------
-        if self.model is not None:
-            try:
-                input_df = pd.DataFrame([{
-                    "power_watts": power_watts,
-                    "duration_minutes": duration_minutes
-                }])
-
-                ml_pred = float(self.model.predict(input_df)[0])
-                energy_kwh = max(0.0, ml_pred)
-
-            except Exception as e:
-                print(f"⚠️ ML prediction failed, fallback used: {e}")
-                energy_kwh = physics_kwh
-        else:
-            energy_kwh = physics_kwh
-
-        # -------------------------------------------------
-        # Final response
-        # -------------------------------------------------
+        # 3. Physics Calculation
+        # Formula: (Watts * DutyCycle / 1000) * (Minutes / 60)
+        effective_power = power_watts * duty_cycle
+        physics_kwh = (effective_power / 1000) * (duration_minutes / 60)
+        
         return {
-            "energy_kwh": round(energy_kwh, 3),
-            "mode": mode,
-            "hypothetical": mode == "what_if"
+            "energy_kwh": round(physics_kwh, 4),
+            "method": "physics_duty_cycle",
+            "reason": f"Applied {int(duty_cycle*100)}% duty cycle for {appliance}",
+            "mode": mode
         }

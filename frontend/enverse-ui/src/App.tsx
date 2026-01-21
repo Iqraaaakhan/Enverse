@@ -171,14 +171,20 @@ function App() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-             <div className="relative group flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm cursor-default hover:shadow-md transition-all duration-300">
-                <Radio size={16} className="text-emerald-500 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                  NILM Active
-                </span>
-             </div>
-          </div>
+          <div className="relative group flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border border-slate-100 shadow-sm cursor-default hover:shadow-md transition-all duration-300">
+  <Radio size={16} className="text-emerald-500 animate-pulse" />
+  <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+    NILM Active
+  </span>
+  
+  {/* Hover Tooltip */}
+  <div className="absolute top-full right-0 mt-3 w-64 bg-slate-900 text-white p-4 rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 border border-slate-800">
+    <div className="absolute -top-1.5 right-6 w-3 h-3 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
+    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">System Status</p>
+    <p className="text-xs font-medium leading-relaxed text-slate-200">
+         Appliance-level energy analytics active.</p>
+  </div>
+</div>
 
         </header>
 
