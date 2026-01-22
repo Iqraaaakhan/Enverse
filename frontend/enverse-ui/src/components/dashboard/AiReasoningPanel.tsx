@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react"
 import { Brain, CheckCircle2, AlertTriangle, Moon, Zap } from "lucide-react"
-// ✅ FIXED IMPORT PATH
 import { getDeviceDisplayName } from "../../utils/deviceAliases"
 
-// Define the structure of the Raw Backend Response
 type InsightData = 
   | { type: 'dominant_load'; device: string; value: number; percentage: number }
   | { type: 'consumption_status'; status: 'high' | 'normal'; total_kwh: number; driver?: string }
@@ -27,82 +25,68 @@ export default function AiReasoningPanel() {
       .finally(() => setLoading(false))
   }, [])
 
-  // --- TEXT GENERATION LOGIC ---
   const renderInsight = (data: InsightData, index: number) => {
     switch (data.type) {
-      
       case 'dominant_load':
         return (
-          <div key={index} className="flex gap-4 group">
-            <Zap size={20} className="text-amber-500 shrink-0 mt-1" />
-            <p className="text-sm font-medium text-slate-700 leading-normal">
-              {/* ✅ APPLY ALIAS HERE */}
-              <span className="font-bold">{getDeviceDisplayName(data.device)}</span> is the primary consumer, accounting for <span className="font-bold">{data.percentage}%</span> of total energy.
-            </p>
+          <div key={index} className="flex gap-5 group items-start">
+            <div className="mt-1 p-2 bg-amber-50 rounded-xl text-amber-600">
+              <Zap size={24} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-base font-medium text-slate-600 leading-relaxed">
+                <span className="text-lg font-black text-slate-900">{getDeviceDisplayName(data.device)}</span> is the primary consumer, accounting for <span className="text-lg font-black text-slate-900">{data.percentage}%</span> of total energy.
+              </p>
+            </div>
           </div>
         )
 
-     // ... inside renderInsight ...
-
       case 'consumption_status':
         const isHigh = data.status === 'high'
-        const driverName = data.driver ? getDeviceDisplayName(data.driver) : "primary load"
-        
         return (
-          <div key={index} className="flex gap-4 group">
-            {isHigh ? (
-              <AlertTriangle size={20} className="text-rose-500 shrink-0 mt-1" />
-            ) : (
-              <CheckCircle2 size={20} className="text-emerald-500 shrink-0 mt-1" />
-            )}
-            <p className="text-sm font-medium text-slate-700 leading-normal">
-              {isHigh 
-                ? `High consumption detected (${data.total_kwh} kWh). Usage is significantly driven by ${driverName}.`
-                // ✅ FIXED: Safer phrasing. "Optimal" -> "Consistent with historical baseline"
-                : `Consumption (${data.total_kwh} kWh) is consistent with the historical baseline for this system.`
-              }
-            </p>
+          <div key={index} className="flex gap-5 group items-start">
+            <div className={`mt-1 p-2 rounded-xl ${isHigh ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+              {isHigh ? <AlertTriangle size={24} /> : <CheckCircle2 size={24} />}
+            </div>
+            <div className="space-y-1">
+              <p className="text-base font-medium text-slate-600 leading-relaxed">
+                Consumption <span className="font-bold text-slate-800">({data.total_kwh} kWh)</span> is {isHigh ? 'above' : 'consistent with'} the historical baseline for this system.
+              </p>
+            </div>
           </div>
         )
 
       case 'night_usage':
-        const isNightHigh = data.percentage > 40
         return (
-          <div key={index} className="flex gap-4 group">
-            <Moon size={20} className={isNightHigh ? "text-indigo-500" : "text-slate-400"} />
-            <p className="text-sm font-medium text-slate-700 leading-normal">
-              {isNightHigh
-                // ✅ FIXED: Added .toFixed(0)
-                ? `Night-time usage is ${data.percentage.toFixed(0)}% of total. Check for devices left in standby.`
-                : `Night-time usage is ${data.percentage.toFixed(0)}%, indicating efficient overnight operations.`
-              }
-            </p>
+          <div key={index} className="flex gap-5 group items-start">
+            <div className="mt-1 p-2 bg-indigo-50 rounded-xl text-indigo-600">
+              <Moon size={24} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-base font-medium text-slate-600 leading-relaxed">
+                Night-time usage is <span className="text-lg font-black text-slate-900">{data.percentage.toFixed(0)}%</span> of total. {data.percentage > 40 ? "Check for devices left in standby." : "Optimal sleep mode detected."}
+              </p>
+            </div>
           </div>
         )
-
-      default:
-        return null
+      default: return null
     }
   }
 
   return (
-    <div className="h-full p-6 md:p-8 flex flex-col">
-      <div className="flex items-center gap-2 mb-6">
-        <Brain size={18} className="text-amber-600" />
-        <h4 className="text-xs font-black uppercase tracking-widest text-slate-600">Pattern Recognition</h4>
+    <div className="h-full p-8 flex flex-col">
+      <div className="flex items-center gap-3 mb-8">
+        <Brain size={20} className="text-amber-600" />
+        <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Pattern Recognition</h4>
       </div>
 
-      <div className="space-y-4 flex-1">
+      <div className="space-y-8 flex-1">
         {loading ? (
-          <div className="flex items-center gap-3 text-sm font-medium text-slate-400 animate-pulse">
-            <div className="w-2 h-2 bg-slate-400 rounded-full" />
+          <div className="flex items-center gap-3 text-base font-medium text-slate-400 animate-pulse">
+            <div className="w-2.5 h-2.5 bg-slate-300 rounded-full" />
             Analyzing usage patterns...
           </div>
-        ) : insights.length ? (
-          insights.map((insight, i) => renderInsight(insight, i))
-        ) : (
-          <p className="text-sm text-slate-400 italic">System calibrating...</p>
-        )}
+        ) : insights.map((insight, i) => renderInsight(insight, i))}
       </div>
     </div>
   )

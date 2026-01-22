@@ -1,104 +1,139 @@
 import { useEffect, useState } from "react"
 import { Zap, Cpu, ShieldCheck, TrendingUp } from "lucide-react"
+import { motion } from "framer-motion"
 
-// Updated Card: Compact padding (p-4), but LARGE fonts for examiners
-function Card({ title, value, unit, icon: Icon, color, sub }: any) {
+// 🌟 VFX: Number Counter Hook (UI Only)
+const useCounter = (end: number, duration = 2000) => {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let start = 0
+    const increment = end / (duration / 16)
+    const timer = setInterval(() => {
+      start += increment
+      if (start >= end) {
+        setCount(end)
+        clearInterval(timer)
+      } else {
+        setCount(start)
+      }
+    }, 16)
+    return () => clearInterval(timer)
+  }, [end, duration])
+  return count
+}
+
+function Card({ title, value, unit, icon: Icon, color, sub, delay }: any) {
+  const displayValue = useCounter(Number(value))
+
   return (
-    <div className="premium-card p-4 flex flex-col justify-between h-full relative overflow-hidden group border border-slate-100">
-      {/* Decorative background blur */}
-      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full ${color} opacity-10 group-hover:scale-150 transition-transform duration-700`} />
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      className="premium-card p-5 flex flex-col justify-between h-full relative group hover:-translate-y-1 transition-transform duration-300"
+    >
+      {/* VFX: Shimmer Effect on Hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden rounded-[2rem]">
+        <div className="animate-shimmer w-full h-full" />
+      </div>
+
+      {/* Decorative Blur */}
+<div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full ${color} opacity-15 blur-2xl`} />
       
-      <div className="flex items-center gap-2 relative z-10">
-        <div className={`p-2.5 rounded-lg ${color} bg-opacity-20 text-slate-800`}>
-          <Icon size={20} />
+      <div className="flex items-center gap-3 relative z-10">
+        <div className={`p-3 rounded-2xl ${color} bg-opacity-10 text-slate-800 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+          <Icon size={22} strokeWidth={2.5} />
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{title}</span>
+        <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{title}</span>
       </div>
 
-      <div className="mt-3 relative z-10">
-        <div className="flex items-baseline">
-            <span className="text-4xl font-black text-slate-900 tracking-tight">{value}</span>
-            {unit && <span className="ml-2 text-base font-bold text-amber-600">{unit}</span>}
+      <div className="mt-4 relative z-10">
+        <div className="flex items-baseline gap-1">
+            <span className="text-5xl font-black text-slate-900 tracking-tighter">
+              {displayValue.toFixed(unit === "%" ? 0 : 1)}
+            </span>
+            {unit && <span className="text-lg font-bold text-amber-500/80">{unit}</span>}
         </div>
       </div>
 
-      <div className="mt-2 pt-2 border-t border-slate-100 relative z-10">
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${color}`} />
+      <div className="mt-3 pt-3 border-t border-slate-100/50 relative z-10 flex items-center gap-2">
+        <span className={`flex h-2 w-2 rounded-full ${color}`}>
+          <span className={`animate-ping absolute inline-flex h-2 w-2 rounded-full ${color} opacity-75`}></span>
+        </span>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             {sub}
         </span>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
 export default function KpiCards() {
-  const [totalEnergy, setTotalEnergy] = useState(0)
-  const [activeDevices, setActiveDevices] = useState(0)
-  const [anomalies, setAnomalies] = useState(0)
-  const [nightRatio, setNightRatio] = useState(0)
+  const [data, setData] = useState<any>(null)
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/dashboard")
       .then(res => res.json())
-      .then(data => {
-        setTotalEnergy(Number(data.total_energy_kwh || 0))
-        setActiveDevices(
-          data.device_wise_energy_kwh
-            ? Object.keys(data.device_wise_energy_kwh).length
-            : 0
-        )
-        setAnomalies(Array.isArray(data.anomalies) ? data.anomalies.length : 0)
-        
-        if (Array.isArray(data.raw_records)) {
-          const night = data.raw_records.filter((r: any) => r.is_night === 1).length
-          const total = data.raw_records.length || 1
-          setNightRatio(Math.round((night / total) * 100))
-        } else if (data.night_usage_percent) {
-            setNightRatio(data.night_usage_percent)
-        }
-      })
-      .catch(err => {
-        console.error("Dashboard KPI fetch failed", err)
-      })
+      .then(setData)
+      .catch(console.error)
   }, [])
 
+  // 🟢 SAFEGUARD: Prevent blank screen, show skeletons if loading
+  if (!data) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1,2,3,4].map(i => (
+          <div key={i} className="premium-card h-40 animate-pulse bg-slate-100/50" />
+        ))}
+      </div>
+    )
+  }
+
+  // 🟢 SAFEGUARD: Restore robust fallback logic for Night Ratio
+  let nightRatio = 0
+  if (Array.isArray(data.raw_records) && data.raw_records.length > 0) {
+    const night = data.raw_records.filter((r: any) => r.is_night === 1).length
+    nightRatio = Math.round((night / data.raw_records.length) * 100)
+  } else if (data.night_usage_percent) {
+    nightRatio = data.night_usage_percent
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card
-        title="Total Energy"
-        value={totalEnergy.toFixed(1)}
-        unit="kWh"
-        icon={Zap}
-        color="bg-amber-400"
-        sub="Current Month Cycle"
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card 
+        title="Total Load" 
+        value={data.total_energy_kwh || 0} 
+        unit="kWh" 
+        icon={Zap} 
+        color="bg-amber-500" 
+        sub="Current Month Cycle" // ✅ Restored academic context
+        delay={0} 
       />
-
-      <Card
-        title="Active Nodes"
-        value={activeDevices}
-        icon={Cpu}
-        color="bg-blue-400"
-        sub="NILM Disaggregated"
+      <Card 
+        title="Active Nodes" 
+        value={Object.keys(data.device_wise_energy_kwh || {}).length} 
+        icon={Cpu} 
+        color="bg-blue-500" 
+        sub="NILM Disaggregated" 
+        delay={0.1} 
       />
-
-     <Card
-        title="Security"
-        value={anomalies}
-        icon={ShieldCheck}
-        color="bg-rose-400"
-        // FIXED: Changed "Threats Detected" to "System Alerts" for academic accuracy
-        sub={anomalies > 0 ? "System Alerts" : "System Secure"}
+      <Card 
+        title="Security" 
+        value={data.anomalies?.length || 0} 
+        icon={ShieldCheck} 
+        color="bg-rose-500" 
+        // ✅ Restored "System Alerts" (Examiner Safe)
+        sub={data.anomalies?.length > 0 ? "System Alerts" : "System Secure"} 
+        delay={0.2} 
       />
-
-
-      <Card
-        title="Night Load"
-        value={nightRatio}
-        unit="%"
-        icon={TrendingUp}
-        color="bg-emerald-400"
-        sub="Behavioral Pattern"
+      <Card 
+        title="Night Ratio" 
+        value={nightRatio} 
+        unit="%" 
+        icon={TrendingUp} 
+        color="bg-emerald-500" 
+        sub="Behavioral Pattern" 
+        delay={0.3} 
       />
     </div>
   )

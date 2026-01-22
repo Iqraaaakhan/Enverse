@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,7 +7,7 @@
 @layer base {
   html, body, #root {
     /* Industry standard: Prevent horizontal overflow and force the light theme */
-    @apply antialiased text-slate-900 bg-[#fcfaf7] !m-0 !p-0 overflow-x-hidden;
+    @apply antialiased text-slate-900 bg-[#f8fafc] !m-0 !p-0 overflow-x-hidden;
     font-family: 'Plus Jakarta Sans', sans-serif;
     width: 100%;
     min-height: 100vh;
@@ -15,12 +15,27 @@
 }
 
 @layer components {
-  /* Cards that scale their padding based on screen size (Rule #4) */
+  /* 🌟 PREMIUM GLASS CARD (Upgraded with VFX) */
   .premium-card {
-    @apply bg-white border border-slate-100 rounded-[1.5rem] md:rounded-[2.5rem] shadow-[0_15px_45px_rgba(0,0,0,0.02)] transition-all duration-500 overflow-hidden;
+    @apply bg-white/80 backdrop-blur-xl border border-white/40 rounded-[1.5rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 relative overflow-hidden;
+  }
+  
+  .premium-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* 🌟 NEON GLOW TEXT */
+  .text-glow {
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
   }
 }
 
+/* --- CRITICAL RESPONSIVE FIXES (DO NOT REMOVE) --- */
 /* Force charts to stay inside their parents on 200px screens */
 .recharts-responsive-container {
   min-width: 0 !important;
@@ -31,19 +46,10 @@ svg { overflow: visible !important; }
 *:focus { outline: none !important; }
 
 /* Custom Scrollbar for a Professional UI */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Responsive Grid Fix for Mobile */
 @media (max-width: 640px) {
@@ -51,18 +57,51 @@ svg { overflow: visible !important; }
     @apply rounded-[1.2rem] p-6;
   }
 }
-.premium-card {
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-  background: white;
-}
-/* ... existing code ... */
 
-/* Tech Background Pattern */
-.bg-grid-pattern {
-  background-size: 40px 40px;
-  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+/* --- VFX ENHANCEMENTS (The "WOW" Factor) --- */
+
+/* 🌌 VORTEX BACKGROUND ANIMATION */
+.bg-vortex {
+  background-color: #f8fafc;
+  /* Subtle gradients for depth */
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,0.03) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,0.03) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,0.03) 0, transparent 50%);
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.bg-vortex::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Moving grid pattern */
+  background-image: linear-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+  animation: grid-pan 40s linear infinite;
+}
+
+@keyframes grid-pan {
+  0% { background-position: 0 0; }
+  100% { background-position: 50px 50px; }
+}
+
+/* 🌟 SHIMMER EFFECT */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 3s infinite;
 }
 
 /* Glassmorphism Utility */
@@ -72,26 +111,3 @@ svg { overflow: visible !important; }
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
-
-/* Animated Gradient Border for AI */
-.ai-border-gradient {
-  position: relative;
-  background: white;
-  background-clip: padding-box;
-  border: 2px solid transparent;
-  border-radius: 1.5rem;
-}
-.ai-border-gradient::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: -1;
-  margin: -2px;
-  border-radius: inherit;
-  background: linear-gradient(to right, #f59e0b, #10b981);
-  opacity: 0.3;
-}
-
