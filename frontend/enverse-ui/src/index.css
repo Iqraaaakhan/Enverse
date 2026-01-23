@@ -111,3 +111,29 @@ svg { overflow: visible !important; }
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
+
+/* Folder: frontend/enverse-ui/src
+   File: index.css */
+
+@keyframes fadeOutLine {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.energy-pulse-bg {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.9), transparent 100%);
+  border-radius: 50%;
+  filter: blur(1px);
+  box-shadow: 
+    0 0 20px rgba(251, 191, 36, 0.6),
+    0 0 40px rgba(251, 191, 36, 0.3);
+  pointer-events: none;
+  z-index: 10;
+  animation: fadeOutLine 0.8s ease-out forwards;
+  transform: translate(-50%, -50%);
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { LayoutDashboard, ShieldAlert, Cpu, Menu, X, Radio, Waves, FileBarChart, Activity } from "lucide-react"
+import { LayoutDashboard, ShieldAlert, Cpu, Menu, X, Radio, Waves, FileBarChart, Activity, LogOut } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { DashboardResponse } from "./types/dashboard"
 
@@ -10,6 +10,7 @@ import AnomalySection from "./components/dashboard/AnomalySection"
 import PredictionSection from "./components/dashboard/PredictionSection"
 import AiIntelligenceHub from "./components/dashboard/AiIntelligenceHub"
 import ChatBot from "./components/dashboard/ChatBot"
+import Login from "./pages/Login"
 
 type Section = "dashboard" | "summary" | "anomalies" | "prediction"
 
@@ -19,14 +20,66 @@ function App() {
   const [activeSection, setActiveSection] = useState<Section>("dashboard")
   const [systemStatus, setSystemStatus] = useState("Offline")
   const [aiStatus, setAiStatus] = useState("Inactive")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
+    // Check if user has valid token
+    const token = localStorage.getItem('enverse_token')
+    const email = localStorage.getItem('enverse_email')
+    
+    if (token && email) {
+      // Verify token with backend
+      fetch('http://127.0.0.1:8000/auth/verify-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid) {
+            setIsAuthenticated(true)
+            setUserEmail(email)
+          } else {
+            // Token invalid, clear storage
+            localStorage.removeItem('enverse_token')
+            localStorage.removeItem('enverse_email')
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('enverse_token')
+          localStorage.removeItem('enverse_email')
+        })
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    
     fetch("http://127.0.0.1:8000/dashboard").then(res => res.json()).then(setRaw).catch(console.error)
     fetch("http://127.0.0.1:8000/health").then(res => res.json()).then(data => {
         setSystemStatus(data.status === "ok" ? "Online" : "Error")
         setAiStatus(data.ai_models === "active" ? "Active" : "Loading")
     }).catch(() => { setSystemStatus("Offline"); setAiStatus("Unreachable") })
-  }, [])
+  }, [isAuthenticated])
+
+  const handleLoginSuccess = (token: string, email: string) => {
+    setIsAuthenticated(true)
+    setUserEmail(email)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('enverse_token')
+    localStorage.removeItem('enverse_email')
+    setIsAuthenticated(false)
+    setUserEmail('')
+    setRaw(null)
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />
+  }
 
   // 🟢 SAFEGUARD: Dynamic Title Logic (Restored)
   const getPageTitle = () => {
@@ -138,25 +191,48 @@ function App() {
             </p>
           </motion.div>
 
-          {/* 🟢 SAFEGUARD: Restored NILM Tooltip for Examiner */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            transition={{ duration: 0.5, delay: 0.2 }} 
-            className="relative group flex items-center gap-2 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/50 shadow-sm cursor-default"
-          >
-            <Radio size={16} className="text-emerald-500 animate-pulse" />
-            <span className="text-xs font-black uppercase tracking-wider text-slate-700">NILM Active</span>
-            
-            {/* Tooltip */}
-            <div className="absolute top-full right-0 mt-3 w-64 bg-slate-900 text-white p-4 rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 border border-slate-800">
-              <div className="absolute -top-1.5 right-6 w-3 h-3 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">System Status</p>
-              <p className="text-xs font-medium leading-relaxed text-slate-200">
-                  Appliance-level energy analytics active.
-              </p>
-            </div>
-          </motion.div>
+          <div className="flex items-center gap-3">
+            {/* User Info */}
+            {userEmail && (
+              <div className="hidden md:flex items-center gap-2 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/40">
+                <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-rose-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  {userEmail[0].toUpperCase()}
+                </div>
+                <span className="text-sm font-semibold text-slate-700 max-w-[150px] truncate">
+                  {userEmail.split('@')[0].replace(/[0-9]/g, '').toUpperCase()}
+                </span>
+              </div>
+            )}
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-300 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/40 hover:scale-105"
+            >
+              <LogOut size={18} />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+
+            {/* 🟢 SAFEGUARD: Restored NILM Tooltip for Examiner */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              transition={{ duration: 0.5, delay: 0.2 }} 
+              className="relative group flex items-center gap-2 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/50 shadow-sm cursor-default"
+            >
+              <Radio size={16} className="text-emerald-500 animate-pulse" />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-700">NILM Active</span>
+              
+              {/* Tooltip */}
+              <div className="absolute top-full right-0 mt-3 w-64 bg-slate-900 text-white p-4 rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 border border-slate-800">
+                <div className="absolute -top-1.5 right-6 w-3 h-3 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">System Status</p>
+                <p className="text-xs font-medium leading-relaxed text-slate-200">
+                    Appliance-level energy analytics active.
+                </p>
+              </div>
+            </motion.div>
+          </div>
         </header>
 
         <AnimatePresence mode="wait">

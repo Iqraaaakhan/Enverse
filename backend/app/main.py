@@ -48,6 +48,10 @@ from app.services.anomaly_detector import detect_anomalies
 from app.services.energy_estimation_service import estimate_energy
 from app.services.explainability_service import generate_explanations
 from app.services.nilm_explainer import explain_energy_usage
+from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
+import sys
+sys.path.append(str(BASE_DIR.parent))
+from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
 from app.services.energy_calculator import compute_dashboard_metrics
 from app.ml.metrics import get_latest_metrics
 from app.services.shap_engine import explain_prediction_shap
@@ -84,6 +88,94 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok", "ai_models": "active"}
+
+
+# -------------------------------------------------------------------
+# Authentication Endpoints
+# -------------------------------------------------------------------
+
+# Initialize auth database on startup
+init_db()
+
+class SendOTPRequest(BaseModel):
+    email: str
+
+class VerifyOTPRequest(BaseModel):
+    email: str
+    otp: str
+
+@app.post("/auth/send-otp")
+def send_otp(request: SendOTPRequest):
+    """Send OTP to user email"""
+    email = request.email.lower().strip()
+    
+    # Validate email format
+    if "@" not in email or "." not in email:
+        return {"success": False, "message": "Invalid email format"}
+    
+    # Generate OTP
+    otp = generate_otp()
+    
+    # Store in database
+    store_otp(email, otp, expires_in_minutes=10)
+    
+    # Send email
+    email_sent = send_otp_email(email, otp)
+    
+    if not email_sent:
+        return {
+            "success": False,
+            "message": "Email service not configured. Please contact administrator."
+        }
+    
+    return {
+        "success": True,
+        "message": f"OTP sent to {email}"
+    }
+
+@app.post("/auth/verify-otp")
+def verify_otp(request: VerifyOTPRequest):
+    """Verify OTP and return JWT token"""
+    email = request.email.lower().strip()
+    otp = request.otp.strip()
+    
+    # Verify OTP
+    is_valid = verify_otp_db(email, otp)
+    
+    if not is_valid:
+        return {
+            "success": False,
+            "message": "Invalid or expired OTP"
+        }
+    
+    # Get or create user
+    user = get_or_create_user(email)
+    
+    # Generate JWT token
+    token = create_jwt_token(email)
+    
+    return {
+        "success": True,
+        "message": "Login successful",
+        "token": token,
+        "user": {
+            "email": user["email"],
+            "id": user["id"]
+        }
+    }
+
+@app.post("/auth/verify-token")
+def verify_token(token: str = Body(..., embed=True)):
+    """Verify JWT token validity"""
+    payload = verify_jwt_token(token)
+    
+    if not payload:
+        return {"valid": False}
+    
+    return {
+        "valid": True,
+        "email": payload.get("email")
+    }
 
 
 # -------------------------------------------------------------------

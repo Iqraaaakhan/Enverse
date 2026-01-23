@@ -176,3 +176,14 @@ Backend responses must include:
 3. **Session State**: Chat sessions stored in memory. Restart backend clears chat history.
 4. **Duty Cycle Lookup**: Predictor matches appliance string **substring**. "AC" matches "Residential Cooling (AC)".
 5. **CSV Encoding**: Ensure CSVs are UTF-8. Data loader may fail on latin-1 without conversion.
+
+## Machine Learning Highlights (Exam Priority)
+- **Core inference (XGBoost forecast)** — short-term energy forecasting from recent load patterns; drives consumption predictions.
+- **Grid anomaly sentinel (Isolation Forest + rules fallback)** — unsupervised outlier detection for abnormal usage streams.
+- **NILM signature extractor (supervised XGBoost with labeled appliances)** — estimates per-appliance energy using power, duration, night/day, occupancy, appliance code (not blind NILM).
+- **Macro-trend forecaster (time-series regression)** — longer-horizon daily load projection using broader historical context.
+- **Adaptive rolling predictor (dynamic windowing)** — short-horizon trend adaptor that smooths/updates forecasts from the latest window stats.
+- **Duty-cycle billing estimator (physics + slabs, deterministic)** — rated power × duty-cycle % with slab tariffs for explainable bills (not ML, but core to cost accuracy).
+- **LLM-assisted analytics (Groq Llama 3.3 70B + local rules)** — local rules answer common bill/device queries instantly; LLM handles free-form questions with live metrics injected.
+- **Explainability (SHAP utility for forecast model when artifact is present)** — factor-level impacts for the forecast model; separate from the rule-based explanations used in production.
+- **Metrics/diagnostics** — MAE/RMSE/R²/MAPE tracked alongside training and preprocessing scripts for validation.

@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, X, Bot } from 'lucide-react';
+import { MessageSquare, Send, X, Bot, Mic, Volume2 } from 'lucide-react';
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([{ text: "Hello! I'm Enverse Assistant. I can help you track your bill, find power-hungry devices, or analyze savings.", isBot: true }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
   
   // Generate unique session ID for this user session
   const sessionId = useRef(Math.random().toString(36).substring(7)).current;
@@ -16,6 +19,51 @@ const ChatBot = () => {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [messages, loading]);
+
+  useEffect(() => {
+    // Initialize Speech Recognition API
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+    } else {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+    }
+  }, []);
+
+  const startListening = () => {
+    if (!recognitionRef.current) return;
+    setIsListening(true);
+    recognitionRef.current.start();
+    
+    recognitionRef.current.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (event.results[event.results.length - 1].isFinal) {
+        setInput(transcript);
+      }
+    };
+    
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
+    
+    recognitionRef.current.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -87,6 +135,19 @@ const ChatBot = () => {
         <div className="p-6 sm:p-10 bg-white border-t border-slate-50">
           <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-[2rem] border border-slate-100">
             <input className="flex-1 bg-transparent px-5 py-3 text-base font-bold outline-none" placeholder="Ask anything..." value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} />
+            {voiceSupported && (
+              <button 
+                onClick={isListening ? stopListening : startListening}
+                className={`p-4 rounded-full transition-all ${
+                  isListening 
+                    ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/50' 
+                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                }`}
+                title={isListening ? 'Stop listening' : 'Start voice input'}
+              >
+                {isListening ? <Volume2 size={20} /> : <Mic size={20} />}
+              </button>
+            )}
             <button onClick={handleSend} className="p-4 bg-slate-900 text-white rounded-full hover:bg-amber-600 transition-all"><Send size={20} /></button>
           </div>
         </div>
