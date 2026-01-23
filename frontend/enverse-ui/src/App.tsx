@@ -10,6 +10,7 @@ import AnomalySection from "./components/dashboard/AnomalySection"
 import PredictionSection from "./components/dashboard/PredictionSection"
 import AiIntelligenceHub from "./components/dashboard/AiIntelligenceHub"
 import ChatBot from "./components/dashboard/ChatBot"
+import AlertNotifications from "./components/dashboard/AlertNotifications"
 import Login from "./pages/Login"
 
 type Section = "dashboard" | "summary" | "anomalies" | "prediction"
@@ -180,6 +181,9 @@ function App() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 p-4 sm:p-8 w-full overflow-x-hidden h-screen overflow-y-auto relative">
+        {/* Alert Notifications - Fixed at top */}
+        <AlertNotifications />
+        
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">
@@ -213,24 +217,14 @@ function App() {
               <span className="hidden sm:inline">Logout</span>
             </button>
 
-            {/* 🟢 SAFEGUARD: Restored NILM Tooltip for Examiner */}
             <motion.div 
               initial={{ opacity: 0, x: 20 }} 
               animate={{ opacity: 1, x: 0 }} 
               transition={{ duration: 0.5, delay: 0.2 }} 
-              className="relative group flex items-center gap-2 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/50 shadow-sm cursor-default"
+              className="flex items-center gap-2 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/50 shadow-sm"
             >
               <Radio size={16} className="text-emerald-500 animate-pulse" />
               <span className="text-xs font-black uppercase tracking-wider text-slate-700">NILM Active</span>
-              
-              {/* Tooltip */}
-              <div className="absolute top-full right-0 mt-3 w-64 bg-slate-900 text-white p-4 rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 border border-slate-800">
-                <div className="absolute -top-1.5 right-6 w-3 h-3 bg-slate-900 rotate-45 border-t border-l border-slate-800"></div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">System Status</p>
-                <p className="text-xs font-medium leading-relaxed text-slate-200">
-                    Appliance-level energy analytics active.
-                </p>
-              </div>
             </motion.div>
           </div>
         </header>

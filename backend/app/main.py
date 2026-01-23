@@ -49,6 +49,7 @@ from app.services.energy_estimation_service import estimate_energy
 from app.services.explainability_service import generate_explanations
 from app.services.nilm_explainer import explain_energy_usage
 from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
+from app.services.alert_service import get_active_alerts
 import sys
 sys.path.append(str(BASE_DIR.parent))
 from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
@@ -437,6 +438,42 @@ def model_health():
 @app.post("/api/explain/prediction")
 def explain_prediction(payload: Dict[str, Any] = Body(...)):
     return explain_prediction_shap(payload)
+
+
+# -------------------------------------------------------------------
+# Smart Alert System
+# -------------------------------------------------------------------
+
+@app.get("/api/alerts")
+def get_alerts():
+    """
+    Returns active alerts for devices running continuously.
+    Uses test dataset for alert demonstrations.
+    """
+    test_csv_path = BASE_DIR / "data" / "energy_usage_test.csv"
+    return get_active_alerts(csv_path=str(test_csv_path))
+
+
+@app.get("/api/alerts/test")
+def get_alerts_test():
+    """
+    TEST ENDPOINT - Demonstrates alert behavior with demo dataset.
+    Uses energy_usage_test.csv with recent timestamps and continuous usage.
+    
+    ⚠️ FOR DEMONSTRATION ONLY - Does not affect production data
+    """
+    test_csv_path = BASE_DIR / "data" / "energy_usage_test.csv"
+    
+    if not test_csv_path.exists():
+        return {
+            "error": "Test dataset not found",
+            "path": str(test_csv_path),
+            "message": "energy_usage_test.csv must exist in backend/data/"
+        }
+    
+    return get_active_alerts(csv_path=str(test_csv_path))
+
+
 # ... imports
 from app.services.llm_service import process_chat_message 
 
