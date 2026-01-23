@@ -6,3 +6,10 @@ __pycache__/
 .DS_Store
 dist/
 build/
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Screenshots
+Screenshot*.png
