@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, X, Bot, Terminal, Sparkles } from 'lucide-react';
+import { MessageSquare, Send, X, Bot } from 'lucide-react';
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([{ text: "Enverse AI Node v2.0 Online. Awaiting query...", isBot: true }]);
+  const [messages, setMessages] = useState([{ text: "Hello! I'm Enverse Assistant. I can help you track your bill, find power-hungry devices, or analyze savings.", isBot: true }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Generate unique session ID for this user session
+  const sessionId = useRef(Math.random().toString(36).substring(7)).current;
 
-  // Auto-scroll logic for mobile/desktop
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -26,11 +28,20 @@ const ChatBot = () => {
       const res = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg })
+        body: JSON.stringify({ 
+            message: userMsg,
+            session_id: sessionId 
+        })
       });
+      
+      if (!res.ok) throw new Error("Server Error");
+      
       const data = await res.json();
-      setMessages(prev => [...prev, { text: data.answer, isBot: true }]);
-    } catch {
+      const botResponse = data.answer || "Error: Invalid response.";
+      
+      setMessages(prev => [...prev, { text: botResponse, isBot: true }]);
+    } catch (err) {
+      console.error(err);
       setMessages(prev => [...prev, { text: "Error: AI Engine Unreachable.", isBot: true }]);
     } finally {
       setLoading(false);
@@ -41,16 +52,29 @@ const ChatBot = () => {
     <>
       {isOpen && <div className="fixed inset-0 bg-slate-900/40 z-[998]" onClick={() => setIsOpen(false)} />}
       <div className={`fixed top-0 right-0 h-full z-[999] bg-white shadow-2xl transition-all duration-500 transform ${isOpen ? "translate-x-0 w-full sm:w-[500px]" : "translate-x-full w-0"} flex flex-col`}>
-        <div className="bg-slate-900 p-8 sm:p-10 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-amber-500 rounded-xl text-white"><Bot size={28} /></div>
+        
+        {/* Header - Clean & Consumer Friendly */}
+        <div className="bg-slate-900 p-6 flex justify-between items-center shrink-0 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg text-white shadow-sm">
+                <Bot size={20} />
+            </div>
             <div>
-              <h3 className="text-white font-black text-xl uppercase italic">Enverse Bot</h3>
-              <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Semantic Engine Active</p>
+              <h3 className="text-white font-bold text-lg tracking-tight leading-none">Enverse</h3>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                <p className="text-[10px] text-slate-300 font-medium uppercase tracking-wider">Assistant Online</p>
+              </div>
             </div>
           </div>
-          <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-white"><X size={28} /></button>
+          <button 
+            onClick={() => setIsOpen(false)} 
+            className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+          >
+            <X size={20} />
+          </button>
         </div>
+
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-6 bg-[#fdfcfb]">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.isBot ? 'justify-start' : 'justify-end'} items-end gap-3`}>

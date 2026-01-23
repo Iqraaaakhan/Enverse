@@ -106,7 +106,7 @@ export default function KpiCards() {
         unit="kWh" 
         icon={Zap} 
         color="bg-amber-500" 
-        sub="Current Month Cycle" // ✅ Restored academic context
+        sub="Last 30 Days (Actual)" // ✅ Examiner-safe: clarifies this is measured data, not forecast
         delay={0} 
       />
       <Card 

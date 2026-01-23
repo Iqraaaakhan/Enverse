@@ -220,14 +220,13 @@ export default function PredictionSection() {
                <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                <div className="flex items-center gap-2 text-slate-400 mb-2">
                   <IndianRupee size={16} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Est. Bill</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Forecasted Bill</span>
                </div>
                <div>
                   <span className="text-3xl font-black tracking-tight">
                     {baseBill > 0 ? baseBill.toLocaleString() : "--"}
                   </span>
-                  <p className="text-[10px] text-slate-400 mt-1">Projected for month end</p>
-               </div>
+              <p className="text-[10px] text-slate-400 mt-1">ML Prediction (Next 30 Days)</p>               </div>
             </div>
           </div>
         </div>

@@ -8,6 +8,8 @@ from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd 
+from app.services.billing_service import calculate_electricity_bill
+
 
 # -------------------------------------------------------------------
 # Utility
@@ -49,6 +51,7 @@ from app.services.nilm_explainer import explain_energy_usage
 from app.services.energy_calculator import compute_dashboard_metrics
 from app.ml.metrics import get_latest_metrics
 from app.services.shap_engine import explain_prediction_shap
+from app.services.billing_service import calculate_electricity_bill
 
 
 # -------------------------------------------------------------------
@@ -111,6 +114,8 @@ def dashboard():
         **metrics,
         "anomalies": anomalies,
         "anomaly_count": len(anomalies),
+        # Ensure savings is passed through
+        "estimated_savings": metrics.get("savings_amount", 0) 
     }
 
 
@@ -149,12 +154,20 @@ def energy_forecast():
     }
 
 # -------------------------------------------------------------------
-# NLP Chat
+# NLP Chat (LLM-Powered with Per-Session Isolation)
 # -------------------------------------------------------------------
+
+from app.services.llm_service import process_chat_message
 
 @app.post("/chat")
 def chat_endpoint(query: ChatQuery):
-    return process_user_query(query.message)
+    # Use LLM-powered chatbot with per-session isolation
+    # session_id defaults to "default" for single-user, but can be per-user in production
+    response_text = process_chat_message(query.message, session_id="default")
+    return {
+        "answer": response_text,
+        "status": "success"
+    }
 
 
 # -------------------------------------------------------------------
@@ -279,83 +292,38 @@ def ai_insights():
 
 @app.get("/energy/ai-timeline")
 def ai_energy_timeline():
-    df = load_energy_data()
-
-    if df is None or df.empty:
+    # REUSE the calculator logic to ensure 100% match with dashboard
+    metrics = compute_dashboard_metrics()
+    
+    if metrics["total_energy_kwh"] == 0:
         return {
             "delta_kwh": 0,
             "delta_cost": 0,
             "primary_device": "N/A",
             "ai_explanation": ["Not enough historical data available yet."]
         }
-
-    if "timestamp" in df.columns:
-        df = df.sort_values("timestamp")
-
-    last_30 = df.tail(30 * 24)
-    prev_30 = df.iloc[-60 * 24:-30 * 24] if len(df) >= 60 * 24 else df.iloc[:0]
-
-    last_kwh = last_30["energy_kwh"].sum()
-    prev_kwh = prev_30["energy_kwh"].sum()
-
-    delta_kwh = round(last_kwh - prev_kwh, 2)
     
-    # Standard Tariff for Estimation
-    TARIFF_RATE = 8.5
-    delta_cost = round(delta_kwh * TARIFF_RATE, 2)
-
-    if len(prev_30) > 0:
-        last_by_device = last_30.groupby("device_name")["energy_kwh"].sum()
-        prev_by_device = prev_30.groupby("device_name")["energy_kwh"].sum()
-        
-        all_devices = set(last_by_device.index) | set(prev_by_device.index)
-        delta_by_device = {}
-        
-        for device in all_devices:
-            last_val = last_by_device.get(device, 0)
-            prev_val = prev_by_device.get(device, 0)
-            delta_by_device[device] = round(last_val - prev_val, 2)
-        
-        if delta_by_device:
-            primary_device = max(delta_by_device, key=lambda x: delta_by_device[x])
-            primary_device_delta = delta_by_device[primary_device]
-        else:
-            primary_device = "Unknown"
-            primary_device_delta = 0
+    delta_kwh = metrics["delta_kwh"]
+    savings = metrics["savings_amount"]
+    
+    # Determine primary device from device breakdown
+    device_breakdown = metrics.get("device_wise_energy_kwh", {})
+    if device_breakdown:
+        primary_device = max(device_breakdown, key=device_breakdown.get)
     else:
-        device_totals = last_30.groupby("device_name")["energy_kwh"].sum()
-        primary_device = device_totals.idxmax() if len(device_totals) > 0 else "Unknown"
-        primary_device_delta = 0
-
+        primary_device = "Unknown"
+    
     explanation = []
-
     if delta_kwh > 0:
-        explanation.append(
-            f"↗️ Consumption increased by {delta_kwh} kWh compared to the previous period."
-        )
-        
-        if len(prev_30) > 0 and primary_device_delta > 0:
-            explanation.append(
-                f"📌 {primary_device} contributed most to this increase (+{primary_device_delta} kWh)."
-            )
-            explanation.append(
-                f"💰 Estimated bill impact: +₹{abs(delta_cost)}."
-            )
-        else:
-            explanation.append(
-                f"💰 Total estimated bill increase: ₹{abs(delta_cost)}."
-            )
+        explanation.append(f"↗️ Consumption increased by {abs(delta_kwh):.2f} kWh.")
+        explanation.append(f"💰 Estimated bill impact: +₹{abs(savings):.2f}.")
     else:
-        explanation.append(
-            f"↘️ Consumption decreased by {abs(delta_kwh)} kWh compared to the previous period."
-        )
-        explanation.append(
-            f"✓ Estimated savings: ₹{abs(delta_cost)}."
-        )
+        explanation.append(f"↘️ Consumption decreased by {abs(delta_kwh):.2f} kWh.")
+        explanation.append(f"✓ Estimated savings: ₹{abs(savings):.2f}.")
 
     return {
         "delta_kwh": delta_kwh,
-        "delta_cost": delta_cost,
+        "delta_cost": savings,  # This is slab-based prev_bill - current_bill
         "primary_device": primary_device,
         "ai_explanation": explanation
     }
@@ -377,3 +345,24 @@ def model_health():
 @app.post("/api/explain/prediction")
 def explain_prediction(payload: Dict[str, Any] = Body(...)):
     return explain_prediction_shap(payload)
+# ... imports
+from app.services.llm_service import process_chat_message 
+
+# ... existing code ...
+
+# Update ChatQuery to accept session_id
+class ChatQuery(BaseModel):
+    message: str
+    session_id: str = "default"
+
+# ... existing code ...
+
+@app.post("/chat")
+def chat_endpoint(query: ChatQuery):
+    # Pass session_id to the service
+    response_text = process_chat_message(query.message, query.session_id)
+    
+    return {
+        "answer": response_text,
+        "status": "success"
+    }

@@ -2,6 +2,7 @@ fastapi==0.124.4
 uvicorn==0.38.0
 pydantic==2.12.5
 python-multipart
+python-dotenv
 pandas
 numpy
 scikit-learn
@@ -9,3 +10,6 @@ xgboost
 joblib
 sentence-transformers
 torch
+groq
+python-dotenv
+shap

@@ -175,7 +175,7 @@ function App() {
                 <AiIntelligenceHub />
               </>
             )}
-            {activeSection === "summary" && <EnergySummarySection devices={data.deviceEnergy} rawRecords={data.rawRecords} />}
+            {activeSection === "summary" && <EnergySummarySection devices={data.deviceEnergy} rawRecords={data.rawRecords} currentBill={raw.current_bill} />}
             {activeSection === "anomalies" && <AnomalySection anomalies={data.anomalies} />}
             {activeSection === "prediction" && <PredictionSection />}
           </motion.div>

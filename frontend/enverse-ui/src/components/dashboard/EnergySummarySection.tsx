@@ -22,11 +22,12 @@ import DeviceDetailDrawer from "./DeviceDetailDrawer"
 type Props = {
   devices: Record<string, number>
   rawRecords: any[]
+  currentBill?: number  // Slab-based bill from backend
 }
 
-const TARIFF = 8.5
+// ❌ REMOVED: const TARIFF = 8.5 (No more flat-rate client-side)
 
-export default function EnergySummarySection({ devices, rawRecords }: Props) {
+export default function EnergySummarySection({ devices, rawRecords, currentBill }: Props) {
   const [selectedDevice, setSelectedDevice] = useState<any>(null)
 
   const { deviceStats, totalCost, totalKwh } = useMemo(() => {
@@ -36,7 +37,8 @@ export default function EnergySummarySection({ devices, rawRecords }: Props) {
 
     const sorted = [...rawRecords].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     const totalKwh = Object.values(devices).reduce((a, b) => Number(a) + Number(b), 0)
-    const totalCost = totalKwh * TARIFF
+    // ✅ Use slab-based bill from backend instead of flat-rate calculation
+    const totalCost = currentBill || 0
 
     const groupedByDevice: Record<string, any[]> = {}
     
@@ -82,7 +84,7 @@ export default function EnergySummarySection({ devices, rawRecords }: Props) {
         safeId,
         displayName: getDeviceDisplayName(name),
         totalKwh: Number(devKwh),
-        cost: Number(devKwh) * TARIFF,
+        cost: (currentBill && totalKwh > 0) ? (Number(devKwh) / totalKwh) * currentBill : 0,  // Proportional slab-based cost
         history,
         trendPercent,
         healthScore,
@@ -122,7 +124,7 @@ export default function EnergySummarySection({ devices, rawRecords }: Props) {
             </div>
             
             <p className="text-slate-400 font-medium text-sm max-w-md leading-relaxed">
-              Projected monthly bill based on real-time consumption analysis.
+              Actual bill (Last 30 Days) with slab-based tariff structure.
             </p>
           </div>
 

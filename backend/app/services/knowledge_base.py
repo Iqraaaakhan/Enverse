@@ -1,60 +1,58 @@
-# backend/app/services/knowledge_base.py
-
-from app.services.data_loader import load_energy_data
+import pandas as pd
+from app.services.energy_calculator import compute_dashboard_metrics
 from app.services.anomaly_detector import detect_anomalies
-from app.services.billing_service import calculate_electricity_bill
 
-def get_system_knowledge():
+# UI Alias Mapping
+UI_NAME_MAP = {
+    "Residential Cooling (AC)": "Air Conditioner",
+    "Laundry Appliances": "Washing Machine",
+    "Refrigerator": "Refrigerator",
+    "Consumer Electronics": "Electronics",
+    "Indoor Lighting Load": "Lighting"
+}
+
+def get_live_metrics():
     """
-    Generates explainable, examiner-safe system facts
-    using precomputed energy_usage.csv (single-home).
+    Fetches metrics directly from the shared calculator to ensure 
+    Dashboard and Chatbot ALWAYS show the same numbers.
     """
+    # 1. Get Base Metrics (Shared Logic)
+    metrics = compute_dashboard_metrics()
+    
+    if metrics["total_energy_kwh"] == 0:
+        return None
 
-    raw_data = load_energy_data()
-    if not raw_data:
-        return [{"text": "System is initializing energy data.", "category": "status"}]
+    # 2. Format Device Breakdown
+    device_stats = metrics["device_wise_energy_kwh"]
+    formatted_breakdown = {}
+    for k, v in device_stats.items():
+        ui_name = UI_NAME_MAP.get(k, k)
+        formatted_breakdown[ui_name] = v
 
-    # DATA IS ALREADY ENERGY-AWARE
-    calculated = raw_data
-
-    anomalies = detect_anomalies(calculated)
-
-    # --- DAILY & MONTHLY AGGREGATION ---
-    total_kwh = sum(float(r.get("energy_kwh", 0)) for r in calculated)
-
-    # Assume dataset spans N days (safe normalization)
-    days = max(1, len({r["timestamp"][:10] for r in calculated}))
-    daily_kwh = round(total_kwh / days, 2)
-    monthly_kwh = round(daily_kwh * 30, 2)
-
-    bill = calculate_electricity_bill(monthly_kwh)
-
-    facts = []
-
-    facts.append({
-        "text": f"Your home consumed approximately {daily_kwh} kWh per day on average.",
-        "category": "usage"
-    })
-
-    facts.append({
-        "text": f"Estimated monthly energy usage is {monthly_kwh} kWh.",
-        "category": "forecast"
-    })
-
-    facts.append({
-        "text": f"Projected electricity bill is ₹{bill}.",
-        "category": "billing"
-    })
-
-    if anomalies:
-        facts.append({
-            "text": f"{len(anomalies)} unusual energy patterns were detected, mainly during night-time or peak spikes.",
-            "category": "alert"
-        })
+    # 3. Identify Top/Bottom
+    sorted_devices = sorted(formatted_breakdown.items(), key=lambda x: x[1], reverse=True)
+    
+    if sorted_devices:
+        top_device, top_val = sorted_devices[0]
+        bottom_device, bottom_val = sorted_devices[-1]
     else:
-        facts.append({
-            "text": "No abnormal energy patterns detected so far.",
-            "category": "status"
-        })
+        top_device, top_val = "Unknown", 0
+        bottom_device, bottom_val = "Unknown", 0
 
-    return facts
+    # 4. Anomalies
+    anomalies = detect_anomalies()
+
+    return {
+        "total_kwh": metrics["total_energy_kwh"],
+        "bill": metrics["current_bill"],      # Direct from calculator
+        "prev_bill": metrics["prev_bill"],    # Direct from calculator
+        "top_device": top_device,
+        "top_device_kwh": top_val,
+        "bottom_device": bottom_device,
+        "bottom_device_kwh": bottom_val,
+        "night_ratio": metrics["night_usage_percent"],
+        "device_breakdown": formatted_breakdown,
+        "savings_amount": metrics["savings_amount"],
+        "delta_kwh": metrics["delta_kwh"],
+        "anomaly_count": len(anomalies)
+    }
