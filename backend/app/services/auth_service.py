@@ -4,10 +4,14 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
+from pathlib import Path
 import jwt
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from backend directory
+backend_dir = Path(__file__).resolve().parent.parent.parent
+env_path = backend_dir / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # JWT Configuration
 JWT_SECRET = os.getenv("JWT_SECRET", "enverse_secret_key_change_in_production")
@@ -26,9 +30,10 @@ def generate_otp() -> str:
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
     """Send OTP via email using SMTP"""
+    # For development: Print OTP to console if email not configured
     if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print("⚠️ Email credentials not configured")
-        return False
+        print(f"📧 DEV MODE - OTP for {recipient_email}: {otp}")
+        return True  # Allow login in dev mode
     
     try:
         # Create message

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Brain, CheckCircle2, AlertTriangle, Moon, Zap } from "lucide-react"
 import { getDeviceDisplayName } from "../../utils/deviceAliases"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 
 type InsightData = 
   | { type: 'dominant_load'; device: string; value: number; percentage: number }
@@ -16,7 +17,7 @@ export default function AiReasoningPanel() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/energy/ai-insights")
+    fetch(getApiUrl(API_ENDPOINTS.AI_INSIGHTS))
       .then(res => res.json())
       .then((data: InsightResponse) => {
         setInsights(data.ai_insights || [])

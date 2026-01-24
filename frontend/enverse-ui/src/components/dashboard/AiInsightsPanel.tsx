@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react"
 import { Brain } from "lucide-react"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 
 export default function AiInsightsPanel() {
   const [insights, setInsights] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/energy/ai-insights")
+    fetch(getApiUrl(API_ENDPOINTS.AI_INSIGHTS))
       .then(res => res.json())
       .then(data => {
         setInsights(Array.isArray(data.ai_insights) ? data.ai_insights : [])

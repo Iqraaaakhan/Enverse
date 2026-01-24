@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { TrendingUp, TrendingDown, History } from "lucide-react"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 
 type TimelineResponse = {
   delta_kwh: number
@@ -12,7 +13,7 @@ export default function AiEnergyTimeline() {
   const [data, setData] = useState<TimelineResponse | null>(null)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/energy/ai-timeline")
+    fetch(getApiUrl(API_ENDPOINTS.AI_TIMELINE))
       .then(res => res.json())
       .then(setData)
       .catch(console.error)

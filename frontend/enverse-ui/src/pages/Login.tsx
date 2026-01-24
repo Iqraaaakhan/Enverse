@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, ArrowRight, Shield, Zap, Lock, CheckCircle2 } from 'lucide-react';
+import { getApiUrl, API_ENDPOINTS } from '../config/api';
 
 interface LoginProps {
   onLoginSuccess: (token: string, email: string) => void;
@@ -22,7 +23,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/auth/send-otp', {
+      const res = await fetch(getApiUrl(API_ENDPOINTS.SEND_OTP), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -52,7 +53,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/auth/verify-otp', {
+      const res = await fetch(getApiUrl(API_ENDPOINTS.VERIFY_OTP), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })

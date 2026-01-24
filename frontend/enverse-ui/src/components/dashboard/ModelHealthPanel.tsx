@@ -11,6 +11,7 @@ import {
   Server
 } from "lucide-react"
 import { motion } from "framer-motion"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 
 // --- TYPES ---
 type Metrics = {
@@ -132,7 +133,7 @@ export default function ModelHealthPanel() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/model-health")
+    fetch(getApiUrl(API_ENDPOINTS.MODEL_HEALTH))
       .then(res => res.json())
       .then(setData)
       .catch(console.error)

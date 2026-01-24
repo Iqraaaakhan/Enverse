@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { AlertTriangle, X, Zap } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 
 interface Alert {
   id: string
@@ -106,7 +107,7 @@ export default function AlertNotifications() {
     const fetchAlerts = async () => {
       try {
         console.log("🔍 Fetching alerts from /api/alerts...")
-        const response = await fetch("http://127.0.0.1:8000/api/alerts")
+        const response = await fetch(getApiUrl(API_ENDPOINTS.ALERTS))
         
         if (!response.ok) {
           throw new Error(`API returned ${response.status}`)

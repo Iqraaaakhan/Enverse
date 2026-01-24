@@ -9,6 +9,7 @@ import {
   Sparkles,
   Calendar
 } from "lucide-react"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 import { 
   AreaChart, 
   Area, 
@@ -50,7 +51,7 @@ export default function PredictionSection() {
 
   /* ------------------ AUTO LOAD (ON MOUNT) ------------------ */
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/energy/forecast")
+    fetch(getApiUrl(API_ENDPOINTS.FORECAST))
       .then(res => res.json())
       .then(data => {
         const f = data.forecast
@@ -80,7 +81,7 @@ export default function PredictionSection() {
   const runSimulation = async () => {
     setLoading(true)
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/estimate-energy", {
+      const res = await fetch(getApiUrl(API_ENDPOINTS.ESTIMATE_ENERGY), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { LayoutDashboard, ShieldAlert, Cpu, Menu, X, Radio, Waves, FileBarChart, Activity, LogOut } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { DashboardResponse } from "./types/dashboard"
+import { getApiUrl, API_ENDPOINTS } from "./config/api"
 
 import KpiCards from "./components/dashboard/KpiCards"
 import DeviceEnergyCharts from "./components/dashboard/DeviceEnergyCharts"
@@ -31,7 +32,7 @@ function App() {
     
     if (token && email) {
       // Verify token with backend
-      fetch('http://127.0.0.1:8000/auth/verify-token', {
+      fetch(getApiUrl(API_ENDPOINTS.VERIFY_TOKEN), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token })
@@ -57,8 +58,8 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated) return
     
-    fetch("http://127.0.0.1:8000/dashboard").then(res => res.json()).then(setRaw).catch(console.error)
-    fetch("http://127.0.0.1:8000/health").then(res => res.json()).then(data => {
+    fetch(getApiUrl(API_ENDPOINTS.DASHBOARD)).then(res => res.json()).then(setRaw).catch(console.error)
+    fetch(getApiUrl(API_ENDPOINTS.HEALTH)).then(res => res.json()).then(data => {
         setSystemStatus(data.status === "ok" ? "Online" : "Error")
         setAiStatus(data.ai_models === "active" ? "Active" : "Loading")
     }).catch(() => { setSystemStatus("Offline"); setAiStatus("Unreachable") })

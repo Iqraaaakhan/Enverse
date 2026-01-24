@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Zap, Cpu, ShieldCheck, TrendingUp } from "lucide-react"
 import { motion } from "framer-motion"
+import { getApiUrl, API_ENDPOINTS } from '../../config/api'
 
 // 🌟 VFX: Number Counter Hook (UI Only)
 const useCounter = (end: number, duration = 2000) => {
@@ -72,7 +73,7 @@ export default function KpiCards() {
   const [data, setData] = useState<any>(null)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/dashboard")
+    fetch(getApiUrl(API_ENDPOINTS.DASHBOARD))
       .then(res => res.json())
       .then(setData)
       .catch(console.error)

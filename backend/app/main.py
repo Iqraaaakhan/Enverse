@@ -8,7 +8,6 @@ from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd 
-from app.services.billing_service import calculate_electricity_bill
 
 
 # -------------------------------------------------------------------
@@ -28,12 +27,16 @@ def json_safe(obj):
 
 
 # -------------------------------------------------------------------
-# Ensure backend root is in PYTHONPATH
+# Setup Python path for imports
 # -------------------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PARENT_DIR = BASE_DIR.parent
+
 if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+    sys.path.insert(0, str(BASE_DIR))
+if str(PARENT_DIR) not in sys.path:
+    sys.path.insert(0, str(PARENT_DIR))
 
 
 # -------------------------------------------------------------------
@@ -50,13 +53,11 @@ from app.services.explainability_service import generate_explanations
 from app.services.nilm_explainer import explain_energy_usage
 from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
 from app.services.alert_service import get_active_alerts
-import sys
-sys.path.append(str(BASE_DIR.parent))
-from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
 from app.services.energy_calculator import compute_dashboard_metrics
 from app.ml.metrics import get_latest_metrics
 from app.services.shap_engine import explain_prediction_shap
 from app.services.billing_service import calculate_electricity_bill
+from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
 
 
 # -------------------------------------------------------------------
@@ -69,9 +70,13 @@ app = FastAPI(
     version="2.0.0",
 )
 
+# CORS Configuration
+# For local development, allow all origins
+# For production, replace "*" with your frontend domain:
+# allow_origins=["https://your-frontend.vercel.app", "https://www.yourdomain.com"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # 🚨 Change to specific domains in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
