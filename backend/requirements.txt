@@ -1,3 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi==0.124.4
 uvicorn==0.38.0
 pydantic==2.12.5
@@ -9,7 +11,7 @@ scikit-learn
 xgboost
 joblib
 sentence-transformers
-torch==2.1.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.0+cpu
 groq
 python-dotenv
 shap
