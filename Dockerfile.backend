@@ -15,9 +15,8 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # Install remaining dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code and root-level auth_db.py
+# Copy backend code (includes auth_db.py under backend/)
 COPY backend/ backend/
-COPY auth_db.py ./
 
 # Ensure models dir exists
 RUN mkdir -p backend/app/ml/models
