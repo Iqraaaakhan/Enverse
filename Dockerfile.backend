@@ -10,9 +10,8 @@ RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/
 COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2) Copy backend code (under backend/) and the root-level auth_db.py
+# 2) Copy backend code (auth_db.py is already inside backend/)
 COPY backend/ backend/
-COPY auth_db.py ./
 
 # 3) Ensure models dir exists
 RUN mkdir -p backend/app/ml/models
