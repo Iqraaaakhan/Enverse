@@ -3,27 +3,36 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install build essentials for any native deps
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+# Install build essentials for native deps
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
 
-# 1) Requirements live under backend/
-COPY backend/requirements.txt ./
+# Copy requirements first for better caching
+COPY backend/requirements.txt ./requirements.txt
+
+# Pre-install CPU-only PyTorch to reduce size/time
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2) Copy backend code (auth_db.py is already inside backend/)
+# Copy backend code and root-level auth_db.py
 COPY backend/ backend/
+COPY auth_db.py ./
 
-# 3) Ensure models dir exists
+# Ensure models dir exists
 RUN mkdir -p backend/app/ml/models
 
-# 4) Set PYTHONPATH so imports work from root context
-ENV PYTHONPATH=/app
+# Make both /app and /app/backend importable
+ENV PYTHONPATH=/app:/app/backend
 
 EXPOSE 8000
 
-# 5) Healthcheck without extra deps
+# Simple healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
-# 6) Start from root, pointing to backend package
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Switch into backend folder so 'app' package is top-level
+WORKDIR /app/backend
+
+# Start uvicorn using app.main under backend
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
