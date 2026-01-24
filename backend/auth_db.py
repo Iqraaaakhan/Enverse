@@ -1,9 +1,17 @@
 import sqlite3
+import os
 from pathlib import Path
 from datetime import datetime
 
-# Database path
-DB_PATH = Path(__file__).parent / "auth.db"
+# Database path - Railway-aware
+# If running on Railway (volume mounted at /app/storage), use that path
+# Otherwise use local development path
+if os.getenv("RAILWAY_ENVIRONMENT"):
+    DB_PATH = Path("/app/storage/auth.db")
+    # Ensure storage directory exists
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+else:
+    DB_PATH = Path(__file__).parent / "auth.db"
 
 def init_db():
     """Initialize SQLite database with users and OTP tables"""
