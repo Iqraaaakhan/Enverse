@@ -1,0 +1,42 @@
+# .dockerignore
+
+# Ignore the frontend (Backend doesn't need it)
+frontend/
+enverse-ui/
+node_modules/
+
+# Ignore local python environments
+backend/venv/
+venv/
+.venv/
+env/
+
+# Ignore git history (Heavy!)
+.git/
+.gitignore
+.github/
+
+# Ignore system files
+.DS_Store
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+
+# Ignore CI/CD & docs
+.gitlab-ci.yml
+.github/workflows/
+
+# Ignore test data & logs
+*.log
+build/
+dist/
+
+# Ignore IDE
+.vscode/
+.idea/
+*.swp
