@@ -1,0 +1,30 @@
+# Backend Dockerfile for Enverse API (root context build)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install build essentials for any native deps
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+
+# 1) Requirements live under backend/
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 2) Copy backend code (under backend/) and the root-level auth_db.py
+COPY backend/ backend/
+COPY auth_db.py ./
+
+# 3) Ensure models dir exists
+RUN mkdir -p backend/app/ml/models
+
+# 4) Set PYTHONPATH so imports work from root context
+ENV PYTHONPATH=/app
+
+EXPOSE 8000
+
+# 5) Healthcheck without extra deps
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+
+# 6) Start from root, pointing to backend package
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
