@@ -9,7 +9,7 @@ scikit-learn
 xgboost
 joblib
 sentence-transformers
-torch
+torch==2.1.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 groq
 python-dotenv
 shap
