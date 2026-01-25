@@ -1,37 +1,37 @@
-# Backend Dockerfile for Enverse API (root context build)
+# Backend Dockerfile for Enverse API (optimized for Railway free tier)
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install build essentials for native deps
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
+# Install system tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY backend/requirements.txt ./requirements.txt
+# Upgrade pip for better dependency resolution
+RUN pip install --no-cache-dir --upgrade pip
 
-# Pre-install CPU-only PyTorch + torchvision + torchaudio together (avoid version mismatch)
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Copy requirements first (Docker layer caching)
+COPY backend/requirements.txt .
 
-# Install remaining dependencies
+# Install all dependencies in ONE command
+# Pip will resolve torch+torchvision+transformers versions together
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code (includes auth_db.py under backend/)
-COPY backend/ backend/
+# Copy the entire project
+COPY . .
 
-# Ensure models dir exists
-RUN mkdir -p backend/app/ml/models
-
-# Make both /app and /app/backend importable
+# Environment setup
 ENV PYTHONPATH=/app:/app/backend
 
 EXPOSE 8000
 
-# Simple healthcheck
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
-# Switch into backend folder so 'app' package is top-level
+# Start from backend directory
 WORKDIR /app/backend
 
-# Start uvicorn using app.main under backend
+# Run uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
