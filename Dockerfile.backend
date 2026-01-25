@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 # Copy requirements first for better caching
 COPY backend/requirements.txt ./requirements.txt
 
-# Pre-install CPU-only PyTorch to reduce size/time
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# Pre-install CPU-only PyTorch + torchvision + torchaudio together (avoid version mismatch)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Install remaining dependencies
 RUN pip install --no-cache-dir -r requirements.txt
