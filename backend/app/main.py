@@ -107,7 +107,7 @@ def health_check():
 
 
 
-# Database will be initialized on first auth request (lazy init)
+# Database will be initialized lazily on first auth request
 _db_initialized = False
 
 def ensure_db_initialized():
@@ -115,14 +115,11 @@ def ensure_db_initialized():
     global _db_initialized
     if not _db_initialized:
         try:
-            print("📝 Initializing database...")
             init_db()
             _db_initialized = True
             print("✅ Database initialized")
         except Exception as e:
-            print(f"⚠️ Database init error: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"⚠️ Database error: {e}")
 
 class SendOTPRequest(BaseModel):
     email: str
