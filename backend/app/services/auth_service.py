@@ -23,6 +23,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
 # Email Configuration (SendGrid)
+# Note: we fetch inside the send function to ensure environment is read at runtime
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 
@@ -32,9 +33,27 @@ def generate_otp() -> str:
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
     """Send OTP via SendGrid API (bypasses firewall constraints)"""
+
+    # Read env at call time to avoid stale values
+    sendgrid_api_key = os.getenv("SENDGRID_API_KEY", "").strip()
+    sender_email = os.getenv("SENDER_EMAIL", "").strip()
+
+    api_key_present = bool(sendgrid_api_key)
+    sender_present = bool(sender_email)
+
+    # Minimal, non-sensitive diagnostics
+    if api_key_present:
+        print("ℹ️  SendGrid API key detected (masked)")
+    else:
+        print("⚠️  SendGrid API key missing at runtime")
+
+    if sender_present:
+        print(f"ℹ️  Sender email configured: {sender_email}")
+    else:
+        print("⚠️  Sender email missing at runtime")
     
     # 1. Check configuration
-    if not SENDGRID_API_KEY or not SENDER_EMAIL:
+    if not api_key_present or not sender_present:
         print(f"⚠️  SendGrid NOT CONFIGURED - Check Railway Variables (SENDGRID_API_KEY, SENDER_EMAIL)")
         print(f"⚠️  Cannot send OTP to {recipient_email} - Email not configured")
         return False
@@ -66,7 +85,7 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         )
         
         # 3. Send via SendGrid API
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg = SendGridAPIClient(sendgrid_api_key)
         response = sg.send(message)
         
         if response.status_code in [200, 201, 202]:
