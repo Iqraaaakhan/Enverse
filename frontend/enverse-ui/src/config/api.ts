@@ -7,7 +7,14 @@
  * - For production: Update VITE_API_URL in deployment platform (Vercel/Netlify)
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+// Hardcoded for production (temporary fix to test connectivity)
+const PRODUCTION_URL = "https://enverse-production.up.railway.app";
+const DEV_URL = "http://127.0.0.1:8000";
+
+// Use production URL in production, fallback to env var, then dev URL
+export const API_BASE_URL = 
+  import.meta.env.PROD ? PRODUCTION_URL : 
+  (import.meta.env.VITE_API_URL || DEV_URL);
 
 /**
  * Construct full API endpoint URL
