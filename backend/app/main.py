@@ -230,6 +230,10 @@ class ChatQuery(BaseModel):
 
 @app.get("/dashboard")
 def dashboard():
+    # Import lightweight services locally to avoid startup bloat
+    from app.services.energy_calculator import compute_dashboard_metrics
+    from app.services.anomaly_detector import detect_anomalies
+
     metrics = compute_dashboard_metrics()
     anomalies = detect_anomalies()
 
