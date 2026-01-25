@@ -43,21 +43,28 @@ if str(PARENT_DIR) not in sys.path:
 # Service Imports
 # -------------------------------------------------------------------
 
-from app.services.nlp_engine import process_user_query
-from app.services.predictor import EnergyPredictor
-from app.services.forecast_service import fetch_energy_forecast
-from app.services.data_loader import load_energy_data
-from app.services.anomaly_detector import detect_anomalies
-from app.services.energy_estimation_service import estimate_energy
-from app.services.explainability_service import generate_explanations
-from app.services.nilm_explainer import explain_energy_usage
-from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
-from app.services.alert_service import get_active_alerts
-from app.services.energy_calculator import compute_dashboard_metrics
-from app.ml.metrics import get_latest_metrics
-from app.services.shap_engine import explain_prediction_shap
-from app.services.billing_service import calculate_electricity_bill
-from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
+try:
+    from app.services.nlp_engine import process_user_query
+    from app.services.predictor import EnergyPredictor
+    from app.services.forecast_service import fetch_energy_forecast
+    from app.services.data_loader import load_energy_data
+    from app.services.anomaly_detector import detect_anomalies
+    from app.services.energy_estimation_service import estimate_energy
+    from app.services.explainability_service import generate_explanations
+    from app.services.nilm_explainer import explain_energy_usage
+    from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
+    from app.services.alert_service import get_active_alerts
+    from app.services.energy_calculator import compute_dashboard_metrics
+    from app.ml.metrics import get_latest_metrics
+    from app.services.shap_engine import explain_prediction_shap
+    from app.services.billing_service import calculate_electricity_bill
+    from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
+    print("✅ All service imports successful")
+except Exception as e:
+    print(f"⚠️ Service import warning: {e}")
+    import traceback
+    traceback.print_exc()
+    # Continue anyway - we'll fail gracefully on endpoints that need these
 
 
 # -------------------------------------------------------------------
