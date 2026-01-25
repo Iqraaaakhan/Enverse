@@ -24,12 +24,10 @@ COPY . .
 # Environment setup
 ENV PYTHONPATH=/app:/app/backend
 
-EXPOSE 8080
+EXPOSE 8000
 
 # Start from backend directory
 WORKDIR /app/backend
 
-# Create entrypoint script to handle PORT properly
-RUN echo '#!/bin/sh\nexec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}' > /entrypoint.sh && chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+# Use Python to read PORT environment variable properly
+CMD python -c "import os; port = os.getenv('PORT', '8000'); import subprocess; subprocess.run(['uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', port])"
