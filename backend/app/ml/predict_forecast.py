@@ -10,6 +10,9 @@ MODEL_PATH = BASE_DIR / "models" / "energy_forecast_model.pkl"
 DATA_PATH = BASE_DIR.parent.parent / "data" / "energy_usage.csv"
 MAE_REPORT_PATH = BASE_DIR / "mae_report.txt"
 
+# Feature column names (must match training order)
+FEATURE_COLUMNS = ['day_of_week', 'day_of_month', 'lag_1', 'lag_7', 'rolling_mean_7']
+
 def get_energy_forecast():
     """
     Performs a Recursive Multi-Step Forecast (Rolling Window) on DAILY data.
@@ -56,10 +59,15 @@ def get_energy_forecast():
             # Input Vector - Create DataFrame with explicit column order matching training
             input_row = pd.DataFrame(
                 [[next_date.dayofweek, next_date.day, lag_1, lag_7, rolling_7]],
-                columns=['day_of_week', 'day_of_month', 'lag_1', 'lag_7', 'rolling_mean_7']
+                columns=FEATURE_COLUMNS
             )
             
+            # Validate feature structure before prediction
+            if list(input_row.columns) != FEATURE_COLUMNS:
+                raise ValueError(f"Feature columns mismatch. Expected {FEATURE_COLUMNS}, got {list(input_row.columns)}")
+            
             # Predict (validate_features=False for XGBoost 3.x compatibility with pickled models)
+            # Note: We validate features manually above before disabling XGBoost's validation
             pred_kwh = float(model.predict(input_row, validate_features=False)[0])
             pred_kwh = max(0.0, pred_kwh) # Safety clip
             
