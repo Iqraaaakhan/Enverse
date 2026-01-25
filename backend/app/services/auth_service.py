@@ -28,7 +28,7 @@ def generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
-    """Send OTP via email using SMTP_SSL on Port 465"""
+    """Send OTP via email using SMTP+TLS on Port 587 (more firewall-friendly than SSL 465)"""
     
     # 1. Dev Mode / Safety Check
     if not SENDER_EMAIL or not SENDER_PASSWORD:
@@ -56,9 +56,10 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         """
         msg.attach(MIMEText(body, 'html'))
         
-        # 3. Connect and Send (Using SSL Port 465 - Best for Railway)
-        print(f"🔌 Connecting to smtp.gmail.com:465...")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+        # 3. Connect and Send (Using TLS Port 587 - Better for Railway/cloud)
+        print(f"🔌 Connecting to smtp.gmail.com:587 with TLS...")
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls()  # Upgrade to TLS
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
         
