@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "models" / "energy_forecast_model.pkl"
 DATA_PATH = BASE_DIR.parent.parent / "data" / "energy_usage.csv"
 MAE_REPORT_PATH = BASE_DIR / "mae_report.txt"
+FEATURE_COLUMNS = ['day_of_week', 'day_of_month', 'lag_1', 'lag_7', 'rolling_mean_7']
 
 def get_energy_forecast():
     """
@@ -54,10 +55,9 @@ def get_energy_forecast():
             rolling_7 = history_buffer['energy_kwh'].tail(7).mean()
             
             # Input Vector - columns must match training order exactly
-            # Create DataFrame with explicit column order to match model's expected feature_names
             input_row = pd.DataFrame(
                 [[next_date.dayofweek, next_date.day, lag_1, lag_7, rolling_7]],
-                columns=['day_of_week', 'day_of_month', 'lag_1', 'lag_7', 'rolling_mean_7']
+                columns=FEATURE_COLUMNS
             )
             
             # Predict
