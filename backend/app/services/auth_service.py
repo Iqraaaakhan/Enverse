@@ -28,19 +28,16 @@ def generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
-    """Send OTP via email using SMTP"""
-    # For development: Print OTP to console if email not configured
+    """Send OTP via email using SMTP_SSL on Port 465"""
+    
+    # 1. Dev Mode / Safety Check
     if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print(f"⚠️  SMTP NOT CONFIGURED - Check SENDER_EMAIL and SENDER_PASSWORD env vars")
-        print(f"📧 DEV MODE - OTP for {recipient_email}: {otp}")
-        return True  # Allow login in dev mode
+        print(f"⚠️  SMTP NOT CONFIGURED - Check Railway Variables")
+        print(f"📧 DEBUG OTP for {recipient_email}: {otp}")
+        return True  # Returns True so you can still log in using the logs
     
     try:
-        print(f"📤 Attempting to send OTP to {recipient_email}")
-        print(f"   Using SMTP: {SMTP_SERVER}:{SMTP_PORT}")
-        print(f"   From: {SENDER_EMAIL}")
-        
-        # Create message
+        # 2. Create the Email Message
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = recipient_email
@@ -48,45 +45,30 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         
         body = f"""
         <html>
-        <body style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
-            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px;">
-                <h2 style="color: #1e293b;">Your Enverse Login Code</h2>
-                <p style="color: #64748b; font-size: 16px;">Enter this code to access your dashboard:</p>
-                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
-                    <span style="font-size: 32px; font-weight: bold; color: #0f172a; letter-spacing: 8px;">{otp}</span>
-                </div>
-                <p style="color: #94a3b8; font-size: 14px;">This code expires in 10 minutes.</p>
-                <p style="color: #94a3b8; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Your Enverse Login Code</h2>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">{otp}</span>
             </div>
+            <p>This code expires in 10 minutes.</p>
         </body>
         </html>
         """
-        
         msg.attach(MIMEText(body, 'html'))
         
-        # Send email
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            print("   🔌 Connecting to SMTP server...")
-            server.starttls()
-            print("  using SMTP_SSL on port 465 (better cloud compatibility)
+        # 3. Connect and Send (Using SSL Port 465 - Best for Railway)
+        print(f"🔌 Connecting to smtp.gmail.com:465...")
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            print("   🔌 Connecting to SMTP server (smtp.gmail.com:465)..."age(msg)
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
         
         print(f"✅ OTP successfully sent to {recipient_email}")
         return True
     
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"❌ SMTP Authentication Failed: {e}")
-        print(f"   Check your SENDER_EMAIL and SENDER_PASSWORD")
-        print(f"   For Gmail, use app-specific password: https://myaccount.google.com/apppasswords")
-        return False
-    except smtplib.SMTPException as e:
-        print(f"❌ SMTP Error: {e}")
-        return False
     except Exception as e:
-        print(f"❌ Email sending failed: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Email sending failed: {e}")
+        # We print the OTP here too so you aren't locked out if the email fails
+        print(f"📧 FALLBACK DEBUG OTP: {otp}")
         return False
 
 def create_jwt_token(email: str) -> str:
