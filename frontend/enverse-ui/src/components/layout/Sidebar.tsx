@@ -1,3 +1,5 @@
+import MenuList from "./MenuList"
+
 type SidebarProps = {
   active: string
   onChange: (value: string) => void
@@ -20,7 +22,7 @@ function Sidebar({ active, onChange, menuOpen, onClose }: SidebarProps) {
             <h2 className="text-sm text-gray-400 mb-4">MENU</h2>
             <MenuList
               active={active}
-              onChange={(v) => {
+              onChange={(v: string) => {
                 onChange(v)
                 onClose()
               }}

@@ -33,3 +33,5 @@ backend/app/ml/models/
 backend/app/ml/metrics.json
 backend/app/ml/model_metrics.json
 
+.vercel
+.env*.local

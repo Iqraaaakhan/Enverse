@@ -176,6 +176,7 @@ export default function DeviceEnergyCharts({ devices, activeCount }: Props) {
           <div className="relative h-[240px] w-full sm:w-[55%] shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                {/* @ts-ignore */}
                 <Pie
                   activeIndex={activeIndex}
                   activeShape={renderActiveShape}

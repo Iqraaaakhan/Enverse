@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: enverse_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist data and database
+      - ./backend/data:/app/data
+      - ./backend/auth.db:/app/auth.db
+      - ./backend/app/ml/models:/app/app/ml/models
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - JWT_SECRET=${JWT_SECRET:-enverse_dev_secret}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_PASSWORD=${SENDER_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: enverse_frontend
+    ports:
+      - "3000:80"  # Use 3000 instead of 80 to avoid sudo requirement
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+networks:
+  default:
+    name: enverse_network
