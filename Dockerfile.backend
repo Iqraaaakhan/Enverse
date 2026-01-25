@@ -29,5 +29,5 @@ EXPOSE 8000
 # Start from backend directory
 WORKDIR /app/backend
 
-# Use entrypoint with exec form to handle $PORT properly
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Shell form CMD to allow $PORT variable expansion
+CMD sh -c 'uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'
