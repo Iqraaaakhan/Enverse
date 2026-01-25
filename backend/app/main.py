@@ -48,6 +48,8 @@ if str(PARENT_DIR) not in sys.path:
 from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
 from app.services.data_loader import load_energy_data
 from app.services.billing_service import calculate_electricity_bill
+from app.services.energy_calculator import compute_dashboard_metrics
+from app.services.anomaly_detector import detect_anomalies
 from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db, get_last_otp
 
 # These will be imported locally inside functions when needed
@@ -230,10 +232,6 @@ class ChatQuery(BaseModel):
 
 @app.get("/dashboard")
 def dashboard():
-    # Import lightweight services locally to avoid startup bloat
-    from app.services.energy_calculator import compute_dashboard_metrics
-    from app.services.anomaly_detector import detect_anomalies
-
     metrics = compute_dashboard_metrics()
     anomalies = detect_anomalies()
 
