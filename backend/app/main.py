@@ -83,8 +83,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://enverse-blue.vercel.app",
+        "http://localhost:3000",
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:8000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -220,6 +221,7 @@ def verify_token(token: str = Body(..., embed=True)):
 
 class ChatQuery(BaseModel):
     message: str
+    session_id: str = "default"
 
 
 # -------------------------------------------------------------------
@@ -284,15 +286,11 @@ def energy_forecast():
 # NLP Chat (LLM-Powered with Per-Session Isolation)
 # -------------------------------------------------------------------
 
-from app.services.llm_service import process_chat_message
-
 @app.post("/chat")
 def chat_endpoint(query: ChatQuery):
     # Import locally - only loads when user actually chats
     from app.services.llm_service import process_chat_message
-    # Use LLM-powered chatbot with per-session isolation
-    # session_id defaults to "default" for single-user, but can be per-user in production
-    response_text = process_chat_message(query.message, session_id="default")
+    response_text = process_chat_message(query.message, query.session_id)
     return {
         "answer": response_text,
         "status": "success"
@@ -307,6 +305,8 @@ def chat_endpoint(query: ChatQuery):
 
 @app.post("/api/estimate-energy")
 def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
+    from app.services.predictor import EnergyPredictor
+
     # Extract params
     appliance = payload.get("appliance", "Unknown") # Critical for duty cycle
     duration = payload.get("usage_duration_minutes", 0)
@@ -395,7 +395,7 @@ def ai_insights():
         # Find driver if high
         driver = None
         if status == "high" and device_breakdown:
-             driver = max(device_breakdown.items(), key=lambda x: x[1])[0]
+            driver = max(device_breakdown.items(), key=lambda x: x[1])[0]
 
         insights.append({
             "type": "consumption_status",
@@ -510,25 +510,3 @@ def get_alerts_test():
     
     return get_active_alerts(csv_path=str(test_csv_path))
 
-
-# ... imports
-from app.services.llm_service import process_chat_message 
-
-# ... existing code ...
-
-# Update ChatQuery to accept session_id
-class ChatQuery(BaseModel):
-    message: str
-    session_id: str = "default"
-
-# ... existing code ...
-
-@app.post("/chat")
-def chat_endpoint(query: ChatQuery):
-    # Pass session_id to the service
-    response_text = process_chat_message(query.message, query.session_id)
-    
-    return {
-        "answer": response_text,
-        "status": "success"
-    }
