@@ -50,6 +50,8 @@ from app.services.data_loader import load_energy_data
 from app.services.billing_service import calculate_electricity_bill
 from app.services.energy_calculator import compute_dashboard_metrics
 from app.services.anomaly_detector import detect_anomalies
+from app.services.alert_service import get_active_alerts
+from app.ml.metrics import get_latest_metrics
 from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db, get_last_otp
 
 # These will be imported locally inside functions when needed
@@ -268,11 +270,9 @@ def realtime_forecast():
 
 @app.get("/energy/forecast")
 def energy_forecast():
+    from app.services.forecast_service import fetch_energy_forecast
     # 1. Fetch the CLEAN forecast data (which now has the correct observations)
     forecast = fetch_energy_forecast()
-    
-    # ❌ REMOVED: nilm_data = explain_energy_usage() 
-    # This was the line injecting the "AC is dominant" lie.
     
     return {
         **json_safe(forecast),
@@ -473,6 +473,7 @@ def model_health():
 
 @app.post("/api/explain/prediction")
 def explain_prediction(payload: Dict[str, Any] = Body(...)):
+    from app.services.explainability_service import explain_prediction_shap
     return explain_prediction_shap(payload)
 
 
