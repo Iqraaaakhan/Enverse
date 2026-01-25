@@ -40,31 +40,58 @@ if str(PARENT_DIR) not in sys.path:
 
 
 # -------------------------------------------------------------------
-# Service Imports
+# Service Imports - Lazy load to avoid startup memory bloat
 # -------------------------------------------------------------------
 
+def lazy_import(import_func):
+    """Decorator to lazy load imports on first use"""
+    _cache = {}
+    def wrapper():
+        if 'module' not in _cache:
+            try:
+                _cache['module'] = import_func()
+            except Exception as e:
+                print(f"⚠️ Lazy import error: {e}")
+                _cache['module'] = None
+        return _cache['module']
+    return wrapper
+
+# Only import what's needed at startup
 try:
-    from app.services.nlp_engine import process_user_query
-    from app.services.predictor import EnergyPredictor
-    from app.services.forecast_service import fetch_energy_forecast
-    from app.services.data_loader import load_energy_data
-    from app.services.anomaly_detector import detect_anomalies
-    from app.services.energy_estimation_service import estimate_energy
-    from app.services.explainability_service import generate_explanations
-    from app.services.nilm_explainer import explain_energy_usage
     from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
-    from app.services.alert_service import get_active_alerts
-    from app.services.energy_calculator import compute_dashboard_metrics
-    from app.ml.metrics import get_latest_metrics
-    from app.services.shap_engine import explain_prediction_shap
-    from app.services.billing_service import calculate_electricity_bill
     from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
-    print("✅ All service imports successful")
+    print("✅ Auth imports successful")
 except Exception as e:
-    print(f"⚠️ Service import warning: {e}")
+    print(f"❌ Auth imports FAILED: {e}")
     import traceback
     traceback.print_exc()
-    # Continue anyway - we'll fail gracefully on endpoints that need these
+    # Don't continue - auth is critical
+
+# These can be lazy-loaded
+@lazy_import
+def import_nlp():
+    from app.services.nlp_engine import process_user_query
+    return process_user_query
+
+@lazy_import  
+def import_energy():
+    from app.services.energy_calculator import compute_dashboard_metrics
+    return compute_dashboard_metrics
+
+@lazy_import
+def import_anomaly():
+    from app.services.anomaly_detector import detect_anomalies
+    return detect_anomalies
+
+@lazy_import
+def import_forecast():
+    from app.services.forecast_service import fetch_energy_forecast
+    return fetch_energy_forecast
+
+@lazy_import
+def import_alerts():
+    from app.services.alert_service import get_active_alerts
+    return get_active_alerts
 
 
 # -------------------------------------------------------------------
