@@ -60,8 +60,8 @@ def get_energy_forecast():
                 columns=FEATURE_COLUMNS
             )
             
-            # Predict
-            pred_kwh = float(model.predict(input_row)[0])
+            # Predict (bypass strict feature validation for XGBoost 3.x with older pickles)
+            pred_kwh = float(model.predict(input_row, validate_features=False)[0])
             pred_kwh = max(0.0, pred_kwh) # Safety clip
             
             # Append prediction to buffer (so next day uses it as lag_1)
