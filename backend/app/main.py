@@ -172,10 +172,18 @@ async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
         print(f"❌ Database error storing OTP: {db_error}")
         return {"success": False, "message": "Failed to process request"}
     
-    # Send email in background (non-blocking)
-    print(f"📤 Queuing email send task for {email}")
-    background_tasks.add_task(send_otp_email, email, otp)
-    print(f"✅ Background task queued - email send will be attempted")
+    # Send email synchronously for debugging (will show errors immediately)
+    print(f"📤 Calling send_otp_email synchronously for debugging...")
+    try:
+        email_sent = send_otp_email(email, otp)
+        if email_sent:
+            print(f"✅ Email send completed successfully")
+        else:
+            print(f"⚠️ Email send returned False - check logs above")
+    except Exception as email_error:
+        print(f"❌ Exception in send_otp_email: {email_error}")
+        import traceback
+        print(f"📋 Traceback:\n{traceback.format_exc()}")
     print("="*60 + "\n")
     
     # Return instantly without waiting for email
