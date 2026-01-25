@@ -32,10 +32,15 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
     """Send OTP via email using SMTP"""
     # For development: Print OTP to console if email not configured
     if not SENDER_EMAIL or not SENDER_PASSWORD:
+        print(f"⚠️  SMTP NOT CONFIGURED - Check SENDER_EMAIL and SENDER_PASSWORD env vars")
         print(f"📧 DEV MODE - OTP for {recipient_email}: {otp}")
         return True  # Allow login in dev mode
     
     try:
+        print(f"📤 Attempting to send OTP to {recipient_email}")
+        print(f"   Using SMTP: {SMTP_SERVER}:{SMTP_PORT}")
+        print(f"   From: {SENDER_EMAIL}")
+        
         # Create message
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
@@ -62,15 +67,28 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         
         # Send email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            print("   🔌 Connecting to SMTP server...")
             server.starttls()
+            print("   🔐 Authenticating...")
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            print("   📨 Sending message...")
             server.send_message(msg)
         
-        print(f"✅ OTP sent to {recipient_email}")
+        print(f"✅ OTP successfully sent to {recipient_email}")
         return True
     
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ SMTP Authentication Failed: {e}")
+        print(f"   Check your SENDER_EMAIL and SENDER_PASSWORD")
+        print(f"   For Gmail, use app-specific password: https://myaccount.google.com/apppasswords")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ SMTP Error: {e}")
+        return False
     except Exception as e:
-        print(f"❌ Email sending failed: {e}")
+        print(f"❌ Email sending failed: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def create_jwt_token(email: str) -> str:

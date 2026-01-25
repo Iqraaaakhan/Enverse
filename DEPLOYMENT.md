@@ -27,7 +27,16 @@ All hardcoded URLs have been replaced with environment variables:
    - Click "New Project" → "Deploy from GitHub repo"
    - Select your repository
    - Railway auto-detects `railway.json`
-   - Add environment variable: `GOOGLE_API_KEY=your_key`
+   - Add environment variables:
+     ```
+     GOOGLE_API_KEY=your_gemini_api_key
+     SENDER_EMAIL=your-email@gmail.com
+     SENDER_PASSWORD=your-gmail-app-password
+     SMTP_SERVER=smtp.gmail.com
+     SMTP_PORT=587
+     JWT_SECRET=your-random-secret-key
+     ```
+   - **For Gmail:** Enable 2FA → Generate app password at https://myaccount.google.com/apppasswords
    - Deploy automatically starts
 
 3. **Get Backend URL**
@@ -58,7 +67,11 @@ All hardcoded URLs have been replaced with environment variables:
      ```
    - Commit and push (Railway auto-redeploys)
 
----
+---\
+  -e GOOGLE_API_KEY=your_key \
+  -e SENDER_EMAIL=your-email@gmail.com \
+  -e SENDER_PASSWORD=your-app-password \
+ 
 
 ### **Option 2: Docker + Any Cloud**
 
@@ -94,6 +107,8 @@ cd enverse
 
 # Backend setup
 cd backend
+export SENDER_EMAIL=your-email@gmail.com
+export SENDER_PASSWORD=your-app-password
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

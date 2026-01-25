@@ -142,6 +142,9 @@ def send_otp(request: SendOTPRequest):
     # Generate OTP
     otp = generate_otp()
     
+    # DEBUG: Print OTP to logs for development
+    print(f"🔐 DEBUG OTP for {email}: {otp}")
+    
     # Store in database
     store_otp(email, otp, expires_in_minutes=10)
     
