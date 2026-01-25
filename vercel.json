@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd frontend/enverse-ui && npm install && npm run build",
+  "outputDirectory": "frontend/enverse-ui/dist",
+  "env": {
+    "VITE_API_BASE_URL": "@vite-api-base-url"
+  }
+}
