@@ -40,58 +40,26 @@ if str(PARENT_DIR) not in sys.path:
 
 
 # -------------------------------------------------------------------
-# Service Imports - Lazy load to avoid startup memory bloat
+# Service Imports - Only lightweight services at startup
 # -------------------------------------------------------------------
 
-def lazy_import(import_func):
-    """Decorator to lazy load imports on first use"""
-    _cache = {}
-    def wrapper():
-        if 'module' not in _cache:
-            try:
-                _cache['module'] = import_func()
-            except Exception as e:
-                print(f"⚠️ Lazy import error: {e}")
-                _cache['module'] = None
-        return _cache['module']
-    return wrapper
+# Safe to import at startup (no torch/ML models)
+from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
+from app.services.data_loader import load_energy_data
+from app.services.billing_service import calculate_electricity_bill
+from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
 
-# Only import what's needed at startup
-try:
-    from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
-    from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
-    print("✅ Auth imports successful")
-except Exception as e:
-    print(f"❌ Auth imports FAILED: {e}")
-    import traceback
-    traceback.print_exc()
-    # Don't continue - auth is critical
+# These will be imported locally inside functions when needed
+# - nlp_engine (loads torch)
+# - predictor (loads torch)  
+# - forecast_service
+# - anomaly_detector
+# - energy_calculator
+# - alert_service
+# - llm_service (loads torch)
+# - shap_engine (loads torch)
 
-# These can be lazy-loaded
-@lazy_import
-def import_nlp():
-    from app.services.nlp_engine import process_user_query
-    return process_user_query
-
-@lazy_import  
-def import_energy():
-    from app.services.energy_calculator import compute_dashboard_metrics
-    return compute_dashboard_metrics
-
-@lazy_import
-def import_anomaly():
-    from app.services.anomaly_detector import detect_anomalies
-    return detect_anomalies
-
-@lazy_import
-def import_forecast():
-    from app.services.forecast_service import fetch_energy_forecast
-    return fetch_energy_forecast
-
-@lazy_import
-def import_alerts():
-    from app.services.alert_service import get_active_alerts
-    return get_active_alerts
+print("✅ Core imports successful (ML features will load on demand)")
 
 
 # -------------------------------------------------------------------
@@ -237,10 +205,9 @@ class ChatQuery(BaseModel):
 
 
 # -------------------------------------------------------------------
-# Global ML Model
+# Global ML Model - REMOVED to prevent startup memory bloat
+# Predictor will be instantiated locally in functions that need it
 # -------------------------------------------------------------------
-
-predictor = EnergyPredictor()
 
 
 # -------------------------------------------------------------------
@@ -267,6 +234,8 @@ def dashboard():
 
 @app.get("/api/realtime-forecast")
 def realtime_forecast():
+    from app.services.predictor import EnergyPredictor
+    predictor = EnergyPredictor()
     total_predicted = predictor.predict(power_watts=1500, duration_minutes=60)
     return {"next_hour_kwh": json_safe(total_predicted)}
 
@@ -303,6 +272,8 @@ from app.services.llm_service import process_chat_message
 
 @app.post("/chat")
 def chat_endpoint(query: ChatQuery):
+    # Import locally - only loads when user actually chats
+    from app.services.llm_service import process_chat_message
     # Use LLM-powered chatbot with per-session isolation
     # session_id defaults to "default" for single-user, but can be per-user in production
     response_text = process_chat_message(query.message, session_id="default")
