@@ -146,22 +146,37 @@ class VerifyOTPRequest(BaseModel):
 @app.post("/auth/send-otp")
 async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     """Send OTP to user email"""
+    print("\n" + "="*60)
+    print("📧 /auth/send-otp endpoint called")
+    print("="*60)
+    
     ensure_db_initialized()  # Initialize DB on first auth request
     
     email = request.email.lower().strip()
+    print(f"👤 Email requested: {email}")
     
     # Validate email format
     if "@" not in email or "." not in email:
+        print(f"❌ Invalid email format: {email}")
         return {"success": False, "message": "Invalid email format"}
     
     # Generate OTP
     otp = generate_otp()
+    print(f"🔑 Generated OTP: {otp} (6-digit code)")
     
     # Store in database
-    store_otp(email, otp, expires_in_minutes=10)
+    try:
+        store_otp(email, otp, expires_in_minutes=10)
+        print(f"✅ OTP stored in database for {email}")
+    except Exception as db_error:
+        print(f"❌ Database error storing OTP: {db_error}")
+        return {"success": False, "message": "Failed to process request"}
     
     # Send email in background (non-blocking)
+    print(f"📤 Queuing email send task for {email}")
     background_tasks.add_task(send_otp_email, email, otp)
+    print(f"✅ Background task queued - email send will be attempted")
+    print("="*60 + "\n")
     
     # Return instantly without waiting for email
     return {

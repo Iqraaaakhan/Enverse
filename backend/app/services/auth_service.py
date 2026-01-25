@@ -59,12 +59,13 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         return False
     
     if not SENDGRID_AVAILABLE:
-        print(f"⚠️  sendgrid library not installed")
-        print(f"⚠️  Cannot send OTP to {recipient_email} - Package missing")
+        print(f"❌ sendgrid library not installed - install with: pip install sendgrid")
+        print(f"❌ Unable to send OTP to {recipient_email}")
+        print("="*60 + "\n")
         return False
     
     try:
-        print(f"ℹ️  Sending OTP via SendGrid to {recipient_email}")
+        print(f"📤 Attempting to send OTP to {recipient_email}...")
 
         # 2. Create email message
         message = Mail(
@@ -85,23 +86,33 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         )
         
         # 3. Send via SendGrid API
+        print(f"🔗 Connecting to SendGrid API...")
         sg = SendGridAPIClient(sendgrid_api_key)
         response = sg.send(message)
         
+        print(f"📨 SendGrid API response status: {response.status_code}")
+        
         if response.status_code in [200, 201, 202]:
-            print(f"✅ OTP successfully sent to {recipient_email} via SendGrid")
+            print(f"✅ SUCCESS: OTP email sent to {recipient_email}")
+            print("="*60 + "\n")
             return True
         else:
             body_preview = getattr(response, "body", b"") or b""
             decoded = body_preview.decode(errors="ignore") if isinstance(body_preview, (bytes, bytearray)) else str(body_preview)
-            print(f"❌ SendGrid API error: {response.status_code} - Unable to send OTP to {recipient_email}")
+            print(f"❌ SendGrid API error status: {response.status_code}")
+            print(f"❌ Unable to send OTP to {recipient_email}")
             if decoded:
-                print(f"⚠️  SendGrid response body (truncated): {decoded[:200]}")
+                print(f"📋 Response body: {decoded[:300]}")
+            print("="*60 + "\n")
             return False
     
     except Exception as e:
-        print(f"❌ SendGrid email failed: {type(e).__name__} - Unable to send OTP to {recipient_email}")
-        print(f"⚠️  Error details: {str(e)[:100]}")  # Log first 100 chars only
+        import traceback
+        print(f"❌ EXCEPTION during SendGrid send: {type(e).__name__}")
+        print(f"❌ Unable to send OTP to {recipient_email}")
+        print(f"📋 Error message: {str(e)[:300]}")
+        print(f"📋 Full traceback:\n{traceback.format_exc()}")
+        print("="*60 + "\n")
         return False
 
 def create_jwt_token(email: str) -> str:
