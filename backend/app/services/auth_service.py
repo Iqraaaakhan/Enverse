@@ -45,6 +45,8 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         return False
     
     try:
+        print(f"ℹ️  Sending OTP via SendGrid to {recipient_email}")
+
         # 2. Create email message
         message = Mail(
             from_email=SENDER_EMAIL,
@@ -71,7 +73,11 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
             print(f"✅ OTP successfully sent to {recipient_email} via SendGrid")
             return True
         else:
+            body_preview = getattr(response, "body", b"") or b""
+            decoded = body_preview.decode(errors="ignore") if isinstance(body_preview, (bytes, bytearray)) else str(body_preview)
             print(f"❌ SendGrid API error: {response.status_code} - Unable to send OTP to {recipient_email}")
+            if decoded:
+                print(f"⚠️  SendGrid response body (truncated): {decoded[:200]}")
             return False
     
     except Exception as e:
