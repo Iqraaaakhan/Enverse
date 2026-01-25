@@ -107,13 +107,16 @@ def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Initialize auth database on startup - won't crash if it fails"""
+    print("🚀 Startup event triggered")
     try:
+        print("📝 Calling init_db()...")
         init_db()
         print("✅ Auth database initialized successfully")
     except Exception as e:
-        print(f"⚠️ Auth database initialization warning: {e}")
+        print(f"⚠️ Auth database initialization error: {e}")
         import traceback
         traceback.print_exc()
+    print("✅ Startup event complete - app ready")
 
 class SendOTPRequest(BaseModel):
     email: str
