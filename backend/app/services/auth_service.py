@@ -69,10 +69,9 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         
         msg.attach(MIMEText(body, 'html'))
         
-        # Send email
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            print("   🔌 Connecting to SMTP server...")
-            server.starttls()
+        # Send email using SMTP_SSL on port 465 (better cloud compatibility)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+            print("   🔌 Connecting to SMTP server (smtp.gmail.com:465)...")
             print("   🔐 Authenticating...")
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             print("   📨 Sending message...")

@@ -4,7 +4,7 @@ import datetime
 from pathlib import Path
 from typing import Dict, Any
 
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd 
@@ -129,7 +129,7 @@ class VerifyOTPRequest(BaseModel):
     otp: str
 
 @app.post("/auth/send-otp")
-def send_otp(request: SendOTPRequest):
+async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     """Send OTP to user email"""
     ensure_db_initialized()  # Initialize DB on first auth request
     
@@ -148,14 +148,13 @@ def send_otp(request: SendOTPRequest):
     # Store in database
     store_otp(email, otp, expires_in_minutes=10)
     
-    # Send email
-    email_sent = send_otp_email(email, otp)
+    # Send email in background (non-blocking)
+    background_tasks.add_task(send_otp_email, email, otp)
     
-    # Always return success so frontend can proceed to OTP screen
-    # (OTP is printed in logs for development)
+    # Return instantly without waiting for email
     return {
         "success": True,
-        "message": f"OTP sent to {email}"
+        "message": "Code generated. Check your email or logs."
     }
 
 @app.post("/auth/verify-otp")
