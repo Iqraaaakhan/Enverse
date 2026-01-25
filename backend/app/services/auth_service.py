@@ -1,6 +1,7 @@
 import os
 import random
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -41,6 +42,9 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         print(f"   Using SMTP: {SMTP_SERVER}:{SMTP_PORT}")
         print(f"   From: {SENDER_EMAIL}")
         
+        # Set socket timeout to prevent hanging
+        socket.setdefaulttimeout(10)
+        
         # Create message
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
@@ -66,7 +70,7 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         msg.attach(MIMEText(body, 'html'))
         
         # Send email
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             print("   🔌 Connecting to SMTP server...")
             server.starttls()
             print("   🔐 Authenticating...")
