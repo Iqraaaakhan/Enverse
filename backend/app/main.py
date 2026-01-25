@@ -157,9 +157,6 @@ async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     # Generate OTP
     otp = generate_otp()
     
-    # DEBUG: Print OTP to logs for fallback (in case email fails)
-    print(f"🔑 OTP for {email}: {otp}")
-    
     # Store in database
     store_otp(email, otp, expires_in_minutes=10)
     
@@ -216,6 +213,39 @@ def verify_token(token: str = Body(..., embed=True)):
     return {
         "valid": True,
         "email": payload.get("email")
+    }
+
+
+# ---
+# TEST ENDPOINT - Demo/Testing Only (Remove after college demo)
+# ---
+
+@app.get("/auth/test-get-otp")
+def test_get_otp(email: str):
+    """
+    TEST ENDPOINT FOR COLLEGE DEMO ONLY
+    
+    Since Railway blocks SMTP ports, this endpoint returns the OTP 
+    that was just generated. Use only for demo testing.
+    
+    ⚠️ DELETE THIS ENDPOINT before production deployment
+    """
+    ensure_db_initialized()
+    
+    # Get the last OTP from database
+    otp = get_last_otp(email)
+    
+    if not otp:
+        return {
+            "success": False,
+            "message": "No OTP found. Please request one first.",
+            "otp": None
+        }
+    
+    return {
+        "success": True,
+        "message": "OTP retrieved (DEMO ONLY - Remove endpoint after demo)",
+        "otp": otp
     }
 
 

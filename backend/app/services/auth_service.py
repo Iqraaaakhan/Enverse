@@ -36,12 +36,12 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
     # 1. Check configuration
     if not SENDGRID_API_KEY or not SENDER_EMAIL:
         print(f"⚠️  SendGrid NOT CONFIGURED - Check Railway Variables (SENDGRID_API_KEY, SENDER_EMAIL)")
-        print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
+        print(f"⚠️  Cannot send OTP to {recipient_email} - Email not configured")
         return False
     
     if not SENDGRID_AVAILABLE:
         print(f"⚠️  sendgrid library not installed")
-        print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
+        print(f"⚠️  Cannot send OTP to {recipient_email} - Package missing")
         return False
     
     try:
@@ -71,14 +71,13 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
             print(f"✅ OTP successfully sent to {recipient_email} via SendGrid")
             return True
         else:
-            print(f"❌ SendGrid API error: {response.status_code}")
-            print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
+            print(f"❌ SendGrid API error: {response.status_code} - Unable to send OTP to {recipient_email}")
             return False
     
     except Exception as e:
         print(f"❌ SendGrid email failed: {e}")
-        print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
-        return False
+        print(f"📧 FALLBACK DEBUG OTP for type(e).__name__} - Unable to send OTP to {recipient_email}")
+        print(f"⚠️  Error details: {str(e)[:100]}")  # Log first 100 chars only
 
 def create_jwt_token(email: str) -> str:
     """Create JWT token for authenticated user"""
