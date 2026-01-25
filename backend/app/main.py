@@ -102,7 +102,13 @@ def health_check():
 # -------------------------------------------------------------------
 
 # Initialize auth database on startup
-init_db()
+try:
+    init_db()
+    print("✅ Auth database initialized successfully")
+except Exception as e:
+    print(f"⚠️ Auth database initialization warning: {e}")
+    import traceback
+    traceback.print_exc()
 
 class SendOTPRequest(BaseModel):
     email: str

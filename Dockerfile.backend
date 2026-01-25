@@ -24,10 +24,10 @@ COPY . .
 # Environment setup
 ENV PYTHONPATH=/app:/app/backend
 
-EXPOSE 8000
+EXPOSE 8080
 
 # Start from backend directory
 WORKDIR /app/backend
 
-# Shell form CMD to allow $PORT variable expansion
-CMD sh -c 'uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'
+# Railway assigns port 8080 - bind directly to it
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8080
