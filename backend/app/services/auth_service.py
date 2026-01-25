@@ -1,12 +1,16 @@
 import os
 import random
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from pathlib import Path
 import jwt
 from dotenv import load_dotenv
+
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+    SENDGRID_AVAILABLE = True
+except ImportError:
+    SENDGRID_AVAILABLE = False
 
 # Load .env from backend directory
 backend_dir = Path(__file__).resolve().parent.parent.parent
@@ -18,58 +22,62 @@ JWT_SECRET = os.getenv("JWT_SECRET", "enverse_secret_key_change_in_production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
-# Email Configuration
-# Note: Using hardcoded smtp.gmail.com:465 (SMTP_SSL) for better cloud compatibility
+# Email Configuration (SendGrid)
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 def generate_otp() -> str:
     """Generate 6-digit OTP"""
     return str(random.randint(100000, 999999))
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
-    """Send OTP via email using SMTP+TLS on Port 587 (more firewall-friendly than SSL 465)"""
+    """Send OTP via SendGrid API (bypasses firewall constraints)"""
     
-    # 1. Dev Mode / Safety Check
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print(f"⚠️  SMTP NOT CONFIGURED - Check Railway Variables")
-        print(f"📧 DEBUG OTP for {recipient_email}: {otp}")
-        return True  # Returns True so you can still log in using the logs
+    # 1. Check configuration
+    if not SENDGRID_API_KEY or not SENDER_EMAIL:
+        print(f"⚠️  SendGrid NOT CONFIGURED - Check Railway Variables (SENDGRID_API_KEY, SENDER_EMAIL)")
+        print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
+        return False
+    
+    if not SENDGRID_AVAILABLE:
+        print(f"⚠️  sendgrid library not installed")
+        print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
+        return False
     
     try:
-        # 2. Create the Email Message
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = recipient_email
-        msg['Subject'] = "Your Enverse Login OTP"
+        # 2. Create email message
+        message = Mail(
+            from_email=SENDER_EMAIL,
+            to_emails=recipient_email,
+            subject="Your Enverse Login Code",
+            html_content=f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Your Enverse Login Code</h2>
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">{otp}</span>
+                </div>
+                <p>This code expires in 10 minutes.</p>
+            </body>
+            </html>
+            """
+        )
         
-        body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; padding: 20px;">
-            <h2>Your Enverse Login Code</h2>
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">{otp}</span>
-            </div>
-            <p>This code expires in 10 minutes.</p>
-        </body>
-        </html>
-        """
-        msg.attach(MIMEText(body, 'html'))
+        # 3. Send via SendGrid API
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
         
-        # 3. Connect and Send (Using TLS Port 587 - Better for Railway/cloud)
-        print(f"🔌 Connecting to smtp.gmail.com:587 with TLS...")
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
-            server.starttls()  # Upgrade to TLS
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.send_message(msg)
-        
-        print(f"✅ OTP successfully sent to {recipient_email}")
-        return True
+        if response.status_code in [200, 201, 202]:
+            print(f"✅ OTP successfully sent to {recipient_email} via SendGrid")
+            return True
+        else:
+            print(f"❌ SendGrid API error: {response.status_code}")
+            print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
+            return False
     
     except Exception as e:
-        print(f"❌ Email sending failed: {e}")
-        # We print the OTP here too so you aren't locked out if the email fails
-        print(f"📧 FALLBACK DEBUG OTP: {otp}")
+        print(f"❌ SendGrid email failed: {e}")
+        print(f"📧 FALLBACK DEBUG OTP for {recipient_email}: {otp}")
         return False
 
 def create_jwt_token(email: str) -> str:

@@ -18,3 +18,4 @@ groq
 python-dotenv
 shap
 PyJWT==2.8.0
+sendgrid==6.11.0
