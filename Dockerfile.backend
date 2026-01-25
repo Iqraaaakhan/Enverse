@@ -29,5 +29,5 @@ EXPOSE 8000
 # Start from backend directory
 WORKDIR /app/backend
 
-# Use Python to read PORT environment variable properly
-CMD python -c "import os; port = os.getenv('PORT', '8000'); import subprocess; subprocess.run(['uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', port])"
+# Use simple shell form for proper port handling
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
