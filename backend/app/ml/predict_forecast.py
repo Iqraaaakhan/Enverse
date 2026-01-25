@@ -53,17 +53,14 @@ def get_energy_forecast():
             lag_7 = history_buffer.iloc[-7]['energy_kwh']
             rolling_7 = history_buffer['energy_kwh'].tail(7).mean()
             
-            # Input Vector
-            input_row = pd.DataFrame([{
-                'day_of_week': next_date.dayofweek,
-                'day_of_month': next_date.day,
-                'lag_1': lag_1,
-                'lag_7': lag_7,
-                'rolling_mean_7': rolling_7
-            }])
+            # Input Vector - Create DataFrame with explicit column order matching training
+            input_row = pd.DataFrame(
+                [[next_date.dayofweek, next_date.day, lag_1, lag_7, rolling_7]],
+                columns=['day_of_week', 'day_of_month', 'lag_1', 'lag_7', 'rolling_mean_7']
+            )
             
-            # Predict
-            pred_kwh = float(model.predict(input_row)[0])
+            # Predict (validate_features=False for XGBoost 3.x compatibility with pickled models)
+            pred_kwh = float(model.predict(input_row, validate_features=False)[0])
             pred_kwh = max(0.0, pred_kwh) # Safety clip
             
             # Append prediction to buffer (so next day uses it as lag_1)
