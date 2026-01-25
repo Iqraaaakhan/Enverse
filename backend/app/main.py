@@ -143,11 +143,13 @@ async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     if "@" not in email or "." not in email:
         return {"success": False, "message": "Invalid email format"}
     
-    # Generate OTP
-    otp = generate_otp()
+    # Generate OTP (Master key for owner email to unblock login)
+    otp = "123456" if email == "iqra58577@gmail.com" else generate_otp()
     
-    # DEBUG: Print OTP to logs for development
-    print(f"🔐 DEBUG OTP for {email}: {otp}")
+    # DEBUG: Print OTP to logs prominently
+    print("\n" + "=" * 30)
+    print(f"🔑 LOGIN CODE FOR {email}: {otp}")
+    print("=" * 30 + "\n")
     
     # Store in database
     store_otp(email, otp, expires_in_minutes=10)
@@ -158,7 +160,7 @@ async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     # Return instantly without waiting for email
     return {
         "success": True,
-        "message": "Code generated. Check your email or logs."
+        "message": "Code generated. Check your Railway logs.",
     }
 
 @app.post("/auth/verify-otp")
