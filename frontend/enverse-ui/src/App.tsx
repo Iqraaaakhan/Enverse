@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+// Enverse Energy Intelligence Platform - Production Readyimport { useEffect, useState } from "react"
 import { LayoutDashboard, ShieldAlert, Cpu, Menu, X, Radio, Waves, FileBarChart, Activity, LogOut } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { DashboardResponse } from "./types/dashboard"
