@@ -105,21 +105,24 @@ def health_check():
 # Authentication Endpoints
 # -------------------------------------------------------------------
 
-# Define startup event to initialize auth database
-@app.on_event("startup")
-async def startup_event():
-    """Initialize auth database on startup - won't crash if it fails"""
-    print("🚀 Startup event triggered")
-    # Temporarily disabled to debug
-    # try:
-    #     print("📝 Calling init_db()...")
-    #     init_db()
-    #     print("✅ Auth database initialized successfully")
-    # except Exception as e:
-    #     print(f"⚠️ Auth database initialization error: {e}")
-    #     import traceback
-    #     traceback.print_exc()
-    print("✅ Startup event complete - app ready")
+
+
+# Database will be initialized on first auth request (lazy init)
+_db_initialized = False
+
+def ensure_db_initialized():
+    """Lazy initialize database on first use"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            print("📝 Initializing database...")
+            init_db()
+            _db_initialized = True
+            print("✅ Database initialized")
+        except Exception as e:
+            print(f"⚠️ Database init error: {e}")
+            import traceback
+            traceback.print_exc()
 
 class SendOTPRequest(BaseModel):
     email: str
@@ -131,6 +134,8 @@ class VerifyOTPRequest(BaseModel):
 @app.post("/auth/send-otp")
 def send_otp(request: SendOTPRequest):
     """Send OTP to user email"""
+    ensure_db_initialized()  # Initialize DB on first auth request
+    
     email = request.email.lower().strip()
     
     # Validate email format
@@ -160,6 +165,8 @@ def send_otp(request: SendOTPRequest):
 @app.post("/auth/verify-otp")
 def verify_otp(request: VerifyOTPRequest):
     """Verify OTP and return JWT token"""
+    ensure_db_initialized()  # Initialize DB on first auth request
+    
     email = request.email.lower().strip()
     otp = request.otp.strip()
     
