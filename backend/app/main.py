@@ -1,6 +1,7 @@
 import sys
 import math
 import datetime
+import os
 from pathlib import Path
 from typing import Dict, Any
 
@@ -47,7 +48,7 @@ if str(PARENT_DIR) not in sys.path:
 from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
 from app.services.data_loader import load_energy_data
 from app.services.billing_service import calculate_electricity_bill
-from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db
+from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db, get_last_otp
 
 # These will be imported locally inside functions when needed
 # - nlp_engine (loads torch)
@@ -85,6 +86,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Debug endpoint guard: enable only when explicitly set
+ENABLE_DEBUG_OTP_ENDPOINT = os.getenv("ENABLE_DEBUG_OTP_ENDPOINT", "false").lower() == "true"
 
 
 # -------------------------------------------------------------------

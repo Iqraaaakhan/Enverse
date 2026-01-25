@@ -123,5 +123,39 @@ def verify_otp(email: str, otp: str) -> bool:
     
     return True
 
+def get_last_otp(email: str):
+    """Retrieve the most recent OTP for the given email that is not used and not expired.
+    Returns the OTP string or None if not found.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT otp, expires_at, used FROM otps
+        WHERE email = ?
+        ORDER BY created_at DESC LIMIT 1
+        """,
+        (email,)
+    )
+
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return None
+
+    otp, expires_at, used = row
+
+    # Validate not used and not expired
+    if used:
+        conn.close()
+        return None
+    if datetime.fromisoformat(expires_at) < datetime.utcnow():
+        conn.close()
+        return None
+
+    conn.close()
+    return otp
+
 if __name__ == "__main__":
     init_db()
