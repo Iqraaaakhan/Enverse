@@ -1,6 +1,17 @@
 // Enverse Energy Intelligence Platform - Production Ready
 import { useEffect, useState } from "react";
-import { LayoutDashboard, ShieldAlert, Cpu, Menu, X, Radio, Waves, FileBarChart, Activity, LogOut } from "lucide-react"
+import {
+  LayoutDashboard,
+  ShieldAlert,
+  Cpu,
+  Menu,
+  X,
+  Radio,
+  Waves,
+  FileBarChart,
+  Activity,
+  LogOut
+} from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { DashboardResponse } from "./types/dashboard"
 import { getApiUrl, API_ENDPOINTS } from "./config/api"
