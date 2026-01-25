@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Dict, Any
 
-from fastapi import FastAPI, Body, BackgroundTasks
+from fastapi import FastAPI, Body, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd 
@@ -83,9 +83,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://enverse-blue.vercel.app",
+        "https://enverse-git-main-iqraaaakhan.vercel.app",
+        "https://enverse-jb4deepe4-iqraaaakhan.vercel.app",
+        # Allow all Vercel preview deployments for college demo testing
+        "https://*.vercel.app",
+        # Local development
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -272,15 +278,32 @@ def realtime_forecast():
 
 @app.get("/energy/forecast")
 def energy_forecast():
-    from app.services.forecast_service import fetch_energy_forecast
-    # 1. Fetch the CLEAN forecast data (which now has the correct observations)
-    forecast = fetch_energy_forecast()
+    """
+    Energy forecast endpoint with defensive error handling for college demo.
+    Returns valid response structure even if ML model encounters issues.
+    """
+    try:
+        from app.services.forecast_service import fetch_energy_forecast
+        # Fetch forecast data
+        forecast = fetch_energy_forecast()
+        
+        # Return successful forecast
+        return {
+            **json_safe(forecast),
+            "explanations": forecast.get("ai_observations", [])
+        }
     
-    return {
-        **json_safe(forecast),
-        # 2. Map the new 'ai_observations' to the frontend's expected 'explanations' key
-        "explanations": forecast.get("ai_observations", [])
-    }
+    except Exception as e:
+        # Log the error for debugging
+        print(f"❌ Forecast error during demo: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return HTTP 503 (Service Unavailable) instead of crashing
+        raise HTTPException(
+            status_code=503,
+            detail="Forecast service is temporarily unavailable. Please refresh the page."
+        )
 
 # -------------------------------------------------------------------
 # NLP Chat (LLM-Powered with Per-Session Isolation)
@@ -305,29 +328,45 @@ def chat_endpoint(query: ChatQuery):
 
 @app.post("/api/estimate-energy")
 def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
-    from app.services.predictor import EnergyPredictor
+    """
+    What-if energy estimation with defensive error handling for college demo.
+    """
+    try:
+        from app.services.predictor import EnergyPredictor
 
-    # Extract params
-    appliance = payload.get("appliance", "Unknown") # Critical for duty cycle
-    duration = payload.get("usage_duration_minutes", 0)
-    power = payload.get("power_watts", 0)
+        # Extract params
+        appliance = payload.get("appliance", "Unknown")
+        duration = payload.get("usage_duration_minutes", 0)
+        power = payload.get("power_watts", 0)
 
-    # Instantiate Predictor
-    pred_service = EnergyPredictor() 
+        # Instantiate Predictor
+        pred_service = EnergyPredictor() 
+        
+        # Get Result
+        result = pred_service.predict_energy(
+            power_watts=power,
+            duration_minutes=duration,
+            appliance=appliance,
+            mode="what_if"
+        )
+
+        return {
+            "estimated_kwh": json_safe(result["energy_kwh"]),
+            "calculation_method": result["method"],
+            "reason": result["reason"]
+        }
     
-    # Get Result
-    result = pred_service.predict_energy(
-        power_watts=power,
-        duration_minutes=duration,
-        appliance=appliance,
-        mode="what_if"
-    )
-
-    return {
-        "estimated_kwh": json_safe(result["energy_kwh"]),
-        "calculation_method": result["method"],
-        "reason": result["reason"]
-    }
+    except Exception as e:
+        # Log error for debugging
+        print(f"❌ Energy estimation error during demo: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return HTTP 503 instead of crashing
+        raise HTTPException(
+            status_code=503,
+            detail="Energy estimation service is temporarily unavailable. Please try again."
+        )
 
 # -------------------------------------------------------------------
 # 🔥 AI INSIGHTS (MATHEMATICALLY CORRECT)

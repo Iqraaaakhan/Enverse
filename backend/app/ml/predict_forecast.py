@@ -13,77 +13,90 @@ MAE_REPORT_PATH = BASE_DIR / "mae_report.txt"
 def get_energy_forecast():
     """
     Performs a Recursive Multi-Step Forecast (Rolling Window) on DAILY data.
+    Enhanced with error handling for college demo stability.
     """
     if not MODEL_PATH.exists():
-        return {"status": "error", "message": "Model not found. Run training script."}
+        raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
 
-    model = joblib.load(MODEL_PATH)
+    try:
+        model = joblib.load(MODEL_PATH)
+    except Exception as e:
+        raise Exception(f"Failed to load ML model: {str(e)}")
     
     # 1. Load & Resample History
     if not DATA_PATH.exists():
-        return {"status": "error", "message": "Data not found"}
+        raise FileNotFoundError(f"Data file not found at {DATA_PATH}")
 
-    df = pd.read_csv(DATA_PATH)
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    
-    # Aggregate to Daily (Must match training logic)
-    daily_df = df.set_index('timestamp').resample('D').agg({'energy_kwh': 'sum'}).reset_index()
-    
-    # Buffer for recursive prediction (Need last 14 days for lags)
-    history_buffer = daily_df.tail(14).copy()
-    
-    future_predictions = []
-    last_date = history_buffer.iloc[-1]['timestamp']
-    
-    # 2. Predict Next 7 Days (Recursive Loop)
-    for i in range(1, 8):
-        next_date = last_date + timedelta(days=i)
+    try:
+        df = pd.read_csv(DATA_PATH)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
         
-        # Calculate Features dynamically from the buffer
-        lag_1 = history_buffer.iloc[-1]['energy_kwh']
-        lag_7 = history_buffer.iloc[-7]['energy_kwh']
-        rolling_7 = history_buffer['energy_kwh'].tail(7).mean()
+        # Aggregate to Daily (Must match training logic)
+        daily_df = df.set_index('timestamp').resample('D').agg({'energy_kwh': 'sum'}).reset_index()
         
-        # Input Vector
-        input_row = pd.DataFrame([{
-            'day_of_week': next_date.dayofweek,
-            'day_of_month': next_date.day,
-            'lag_1': lag_1,
-            'lag_7': lag_7,
-            'rolling_mean_7': rolling_7
-        }])
+        # Validate sufficient data
+        if len(daily_df) < 14:
+            raise ValueError(f"Insufficient data: need 14 days, got {len(daily_df)} days")
         
-        # Predict
-        pred_kwh = float(model.predict(input_row)[0])
-        pred_kwh = max(0.0, pred_kwh) # Safety clip
+        # Buffer for recursive prediction (Need last 14 days for lags)
+        history_buffer = daily_df.tail(14).copy()
         
-        # Append prediction to buffer (so next day uses it as lag_1)
-        new_row = pd.DataFrame([{'timestamp': next_date, 'energy_kwh': pred_kwh}])
-        history_buffer = pd.concat([history_buffer, new_row], ignore_index=True)
+        future_predictions = []
+        last_date = history_buffer.iloc[-1]['timestamp']
         
-        future_predictions.append({
-            "day": next_date.strftime('%a'),
-            "kwh": round(pred_kwh, 2)
-        })
+        # 2. Predict Next 7 Days (Recursive Loop)
+        for i in range(1, 8):
+            next_date = last_date + timedelta(days=i)
+            
+            # Calculate Features dynamically from the buffer
+            lag_1 = history_buffer.iloc[-1]['energy_kwh']
+            lag_7 = history_buffer.iloc[-7]['energy_kwh']
+            rolling_7 = history_buffer['energy_kwh'].tail(7).mean()
+            
+            # Input Vector
+            input_row = pd.DataFrame([{
+                'day_of_week': next_date.dayofweek,
+                'day_of_month': next_date.day,
+                'lag_1': lag_1,
+                'lag_7': lag_7,
+                'rolling_mean_7': rolling_7
+            }])
+            
+            # Predict
+            pred_kwh = float(model.predict(input_row)[0])
+            pred_kwh = max(0.0, pred_kwh) # Safety clip
+            
+            # Append prediction to buffer (so next day uses it as lag_1)
+            new_row = pd.DataFrame([{'timestamp': next_date, 'energy_kwh': pred_kwh}])
+            history_buffer = pd.concat([history_buffer, new_row], ignore_index=True)
+            
+            future_predictions.append({
+                "day": next_date.strftime('%a'),
+                "kwh": round(pred_kwh, 2)
+            })
 
-    # 3. Calculate Totals
-    next_day = future_predictions[0]['kwh']
-    next_week = sum(p['kwh'] for p in future_predictions)
-    # Projection: Next week * ~4.3 weeks in a month
-    next_month = next_week * 4.3 
-    
-    mae_val = "0.03"
-    if MAE_REPORT_PATH.exists():
-        with open(MAE_REPORT_PATH, "r") as f:
-            mae_val = f.read().strip()
+        # 3. Calculate Totals
+        next_day = future_predictions[0]['kwh']
+        next_week = sum(p['kwh'] for p in future_predictions)
+        # Projection: Next week * ~4.3 weeks in a month
+        next_month = next_week * 4.3 
+        
+        mae_val = "0.03"
+        if MAE_REPORT_PATH.exists():
+            with open(MAE_REPORT_PATH, "r") as f:
+                mae_val = f.read().strip()
 
-    return {
-        "status": "ml_prediction",
-        "mae": mae_val,
-        "forecast": {
-            "next_day_kwh": round(next_day, 2),
-            "next_week_kwh": round(next_week, 2),
-            "next_month_kwh": round(next_month, 2),
-            "trend_data": future_predictions
+        return {
+            "status": "ml_prediction",
+            "mae": mae_val,
+            "forecast": {
+                "next_day_kwh": round(next_day, 2),
+                "next_week_kwh": round(next_week, 2),
+                "next_month_kwh": round(next_month, 2),
+                "trend_data": future_predictions
+            }
         }
-    }
+    
+    except Exception as e:
+        # Re-raise with clear error message for debugging
+        raise Exception(f"Forecast prediction failed: {str(e)}")
