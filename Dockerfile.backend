@@ -29,5 +29,5 @@ EXPOSE 8080
 # Start from backend directory
 WORKDIR /app/backend
 
-# Railway assigns port 8080 - bind directly to it
-CMD uvicorn app.main:app --host 0.0.0.0 --port 8080
+# Use shell form to allow $PORT variable expansion
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}

@@ -73,17 +73,13 @@ app = FastAPI(
 )
 
 # CORS Configuration
-# Allow requests from frontend (both production and development URLs)
+# Explicit origins required when using allow_credentials=True
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://enverse-blue.vercel.app",      # Production frontend
-        "https://enverse-production.up.railway.app",  # Backend itself
-        "http://localhost:5173",                 # Local dev
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "*"  # Fallback to allow all
+        "https://enverse-blue.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
