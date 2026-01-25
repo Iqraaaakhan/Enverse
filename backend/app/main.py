@@ -93,6 +93,7 @@ def root():
 
 @app.get("/health")
 def health_check():
+    """Lightweight health check - returns immediately without loading ML models"""
     return {"status": "ok", "ai_models": "active"}
 
 
