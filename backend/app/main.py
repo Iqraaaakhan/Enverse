@@ -93,7 +93,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"status": "Enverse backend running"}
+    return {"status": "Enverse backend running", "version": "2.0.1"}
 
 @app.get("/health")
 def health_check():
