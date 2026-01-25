@@ -75,9 +75,9 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
             return False
     
     except Exception as e:
-        print(f"❌ SendGrid email failed: {e}")
-        print(f"📧 FALLBACK DEBUG OTP for type(e).__name__} - Unable to send OTP to {recipient_email}")
+        print(f"❌ SendGrid email failed: {type(e).__name__} - Unable to send OTP to {recipient_email}")
         print(f"⚠️  Error details: {str(e)[:100]}")  # Log first 100 chars only
+        return False
 
 def create_jwt_token(email: str) -> str:
     """Create JWT token for authenticated user"""
