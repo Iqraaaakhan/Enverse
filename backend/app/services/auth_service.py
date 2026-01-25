@@ -1,7 +1,6 @@
 import os
 import random
 import smtplib
-import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -20,8 +19,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
 # Email Configuration
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+# Note: Using hardcoded smtp.gmail.com:465 (SMTP_SSL) for better cloud compatibility
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
@@ -41,9 +39,6 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         print(f"📤 Attempting to send OTP to {recipient_email}")
         print(f"   Using SMTP: {SMTP_SERVER}:{SMTP_PORT}")
         print(f"   From: {SENDER_EMAIL}")
-        
-        # Set socket timeout to prevent hanging
-        socket.setdefaulttimeout(10)
         
         # Create message
         msg = MIMEMultipart()
@@ -69,13 +64,13 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         
         msg.attach(MIMEText(body, 'html'))
         
-        # Send email using SMTP_SSL on port 465 (better cloud compatibility)
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+            print("   🔌 Connecting to SMTP server...")
+            server.starttls()
+            print("  using SMTP_SSL on port 465 (better cloud compatibility)
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            print("   🔌 Connecting to SMTP server (smtp.gmail.com:465)...")
-            print("   🔐 Authenticating...")
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            print("   📨 Sending message...")
-            server.send_message(msg)
+            print("   🔌 Connecting to SMTP server (smtp.gmail.com:465)..."age(msg)
         
         print(f"✅ OTP successfully sent to {recipient_email}")
         return True
