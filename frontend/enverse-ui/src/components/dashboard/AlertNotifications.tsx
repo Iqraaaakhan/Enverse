@@ -171,7 +171,7 @@ export default function AlertNotifications() {
               rounded-2xl shadow-2xl backdrop-blur-md border-2 overflow-hidden
               ${
                 alert.severity === "critical"
-                  ? "bg-gradient-to-br from-red-900/95 via-red-800/95 to-orange-900/95 border-red-400/50"
+                  ? "bg-gradient-to-br from-red-900/95 via-red-800/95 to-orange-900/95 border-blue-400/50"
                   : "bg-gradient-to-br from-amber-900/95 via-orange-800/95 to-yellow-900/95 border-amber-400/50"
               }
             `}
@@ -185,7 +185,7 @@ export default function AlertNotifications() {
                       p-2.5 rounded-xl backdrop-blur-sm
                       ${
                         alert.severity === "critical"
-                          ? "bg-red-500/30 ring-2 ring-red-400/50"
+                          ? "bg-white/10 ring-2 ring-blue-400/20"
                           : "bg-amber-500/30 ring-2 ring-amber-400/50"
                       }
                     `}
@@ -214,7 +214,7 @@ export default function AlertNotifications() {
                   </div>
 
                   <p className="text-white/95 text-sm leading-relaxed mb-3 font-medium">
-                    {alert.message}
+                    {alert.message.replace(/^⚠️ WARNING:?\s*/i, "")}
                   </p>
 
                   <div className="flex items-center gap-4 text-sm">
