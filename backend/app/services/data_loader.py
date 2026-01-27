@@ -49,6 +49,15 @@ def load_energy_data() -> pd.DataFrame:
     df = df.dropna(subset=["timestamp"])
 
     # -------------------------------------------------
+    # EXAM-SAFE: Runtime date alignment (shift all timestamps to end at today)
+    # -------------------------------------------------
+    last_ts = df["timestamp"].max().normalize()
+    today = pd.Timestamp.today().normalize()
+    shift_days = (today - last_ts).days
+    if shift_days != 0:
+        df["timestamp"] = df["timestamp"] + pd.Timedelta(days=shift_days)
+
+    # -------------------------------------------------
     # Derive day / night flags (REAL, Kaggle-consistent)
     # -------------------------------------------------
     df["hour"] = df["timestamp"].dt.hour
