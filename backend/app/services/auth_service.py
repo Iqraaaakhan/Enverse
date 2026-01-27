@@ -1,7 +1,3 @@
-import socket
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
 import random
 from datetime import datetime, timedelta
@@ -36,35 +32,6 @@ def generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
-    # SMTP fallback if SENDGRID_API_KEY is missing (for local/dev)
-    sendgrid_api_key = os.getenv("SENDGRID_API_KEY", "").strip()
-    if not sendgrid_api_key:
-        try:
-            smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-            smtp_port = int(os.getenv("SMTP_PORT", 587))
-            smtp_user = os.getenv("SMTP_USER")
-            smtp_pass = os.getenv("SMTP_PASS")
-            sender_email = os.getenv("SMTP_SENDER", smtp_user)
-            print(f"📤 [SMTP FALLBACK] Sending OTP to {recipient_email} via {smtp_host}:{smtp_port} as {sender_email}")
-            msg = MIMEMultipart()
-            msg["From"] = sender_email
-            msg["To"] = recipient_email
-            msg["Subject"] = "Your Enverse Login Code"
-            html = f"""
-            <html><body><h2>Your Enverse Login Code</h2>
-            <div style='font-size:32px;font-weight:bold;letter-spacing:8px'>{otp}</div>
-            <p>This code expires in 10 minutes.</p></body></html>
-            """
-            msg.attach(MIMEText(html, "html"))
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(sender_email, recipient_email, msg.as_string())
-            print(f"✅ [SMTP FALLBACK] OTP email sent to {recipient_email}")
-            return True
-        except Exception as e:
-            print(f"❌ [SMTP FALLBACK] Failed to send OTP: {e}")
-            return False
     """Send OTP via SendGrid API (bypasses firewall constraints)"""
 
     # Read env at call time to avoid stale values
