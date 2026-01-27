@@ -1,9 +1,3 @@
-# Device name normalization (aliases)
-DEVICE_NAME_MAP = {
-    "Residential Cooling (AC)": "Air Conditioner",
-    "AC": "Air Conditioner",
-    # Add more aliases as needed
-}
 """
 Smart Alert Detection Service
 Analyzes recent energy data to detect continuous device operation
@@ -91,49 +85,52 @@ def detect_continuous_operation_alerts(csv_path: str = None) -> List[Dict[str, A
         
         alerts = []
         
-        # Group by device and analyze total runtime (sum of duration_minutes)
+        # Group by device and analyze continuous operation
         for device_name, device_df in df_recent.groupby("device_name"):
-            # Normalize device name using alias map
-            normalized_device = DEVICE_NAME_MAP.get(device_name, device_name)
-            # Only show alert for Air Conditioner
-            if normalized_device != "Air Conditioner":
-                continue
+            
             # Skip devices not in alert threshold config (e.g., Fridge)
-            if normalized_device not in ALERT_THRESHOLDS:
+            if device_name not in ALERT_THRESHOLDS:
                 continue
-
+            
+            # Sort by timestamp to get continuous operation window
+            device_df = device_df.sort_values("timestamp")
+            
             # Filter for active power draw (device is ON)
             active_records = device_df[device_df["power_watts"] > 0]
+            
             if active_records.empty:
                 continue
-
-            # Sum up total runtime in minutes in the window
-            total_runtime_minutes = active_records["duration_minutes"].sum()
-            duration_hours = total_runtime_minutes / 60.0
-
+            
+            # Calculate continuous runtime
+            first_timestamp = active_records["timestamp"].min()
+            last_timestamp = active_records["timestamp"].max()
+            
+            # Calculate duration in hours
+            duration = (last_timestamp - first_timestamp).total_seconds() / 3600
+            
             # Check against thresholds
-            thresholds = ALERT_THRESHOLDS[normalized_device]
+            thresholds = ALERT_THRESHOLDS[device_name]
             severity = None
-            if duration_hours >= thresholds["critical"]:
+            
+            if duration >= thresholds["critical"]:
                 severity = "critical"
-            elif duration_hours >= thresholds["warning"]:
+            elif duration >= thresholds["warning"]:
                 severity = "warning"
-
+            
             # Generate alert if threshold exceeded
             if severity:
-                first_timestamp = active_records["timestamp"].min()
-                last_timestamp = active_records["timestamp"].max()
-                alert_id = f"{normalized_device}_{first_timestamp.strftime('%Y%m%d%H%M')}"
+                alert_id = f"{device_name}_{first_timestamp.strftime('%Y%m%d%H%M')}"
+                
                 alerts.append({
                     "id": alert_id,
-                    "device": normalized_device,
-                    "duration_hours": round(duration_hours, 1),
+                    "device": device_name,
+                    "duration_hours": round(duration, 1),
                     "severity": severity,
-                    "message": generate_alert_message(normalized_device, duration_hours, severity),
+                    "message": generate_alert_message(device_name, duration, severity),
                     "first_detected": first_timestamp.isoformat(),
                     "last_seen": last_timestamp.isoformat(),
                     "power_watts": float(active_records["power_watts"].mean()),
-                    "estimated_cost": calculate_alert_cost(duration_hours, active_records["power_watts"].mean())
+                    "estimated_cost": calculate_alert_cost(duration, active_records["power_watts"].mean())
                 })
         
         # Sort by severity (critical first) then duration
