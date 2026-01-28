@@ -2159,3 +2159,6 @@ timestamp,device_name,device_type,energy_kwh,power_watts,duration_minutes,season
 2023-03-31 21:00:00,Residential Cooling (AC),hvac,3.04,4449,41,Summer,0,1,0
 2023-03-31 22:00:00,Residential Cooling (AC),hvac,3.58,3978,54,Summer,0,1,0
 2023-03-31 23:00:00,Refrigerator,appliance,0.75,1023,44,Winter,0,1,1
+
+2023-03-31 21:00:00,Residential Cooling (AC),hvac,3.14,4549,43,Summer,0,1,0
+2023-03-31 22:00:00,Residential Cooling (AC),hvac,3.68,4078,56,Summer,0,1,0
