@@ -9,6 +9,11 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from app.services.data_loader import load_energy_data
 
+# Device name aliasing for alert logic
+DEVICE_ALIASES = {
+    "Residential Cooling (AC)": "Air Conditioner",
+}
+
 
 # -------------------------------------------------
 # Device-Specific Alert Thresholds (Hours)
@@ -16,7 +21,7 @@ from app.services.data_loader import load_energy_data
 ALERT_THRESHOLDS = {
     "Air Conditioner": {
         "warning": 2.0,    # Alert after 2 hours
-        "critical": 4.0,   # Critical after 4 hours
+        "critical": 3.0,   # Critical after 3 hours (matches window)
     },
     "Washing Machine": {
         "warning": 3.0,    # Alert after 3 hours
@@ -87,46 +92,38 @@ def detect_continuous_operation_alerts(csv_path: str = None) -> List[Dict[str, A
         
         # Group by device and analyze continuous operation
         for device_name, device_df in df_recent.groupby("device_name"):
-            
+            # Map device name using aliases if present
+            canonical_name = DEVICE_ALIASES.get(device_name, device_name)
             # Skip devices not in alert threshold config (e.g., Fridge)
-            if device_name not in ALERT_THRESHOLDS:
+            if canonical_name not in ALERT_THRESHOLDS:
                 continue
-            
             # Sort by timestamp to get continuous operation window
             device_df = device_df.sort_values("timestamp")
-            
             # Filter for active power draw (device is ON)
             active_records = device_df[device_df["power_watts"] > 0]
-            
             if active_records.empty:
                 continue
-            
             # Calculate continuous runtime
             first_timestamp = active_records["timestamp"].min()
             last_timestamp = active_records["timestamp"].max()
-            
             # Calculate duration in hours
             duration = (last_timestamp - first_timestamp).total_seconds() / 3600
-            
-            # Check against thresholds
-            thresholds = ALERT_THRESHOLDS[device_name]
+            # Check against thresholds (use canonical_name)
+            thresholds = ALERT_THRESHOLDS[canonical_name]
             severity = None
-            
             if duration >= thresholds["critical"]:
                 severity = "critical"
             elif duration >= thresholds["warning"]:
                 severity = "warning"
-            
             # Generate alert if threshold exceeded
             if severity:
-                alert_id = f"{device_name}_{first_timestamp.strftime('%Y%m%d%H%M')}"
-                
+                alert_id = f"{canonical_name}_{first_timestamp.strftime('%Y%m%d%H%M')}"
                 alerts.append({
                     "id": alert_id,
-                    "device": device_name,
+                    "device": canonical_name,
                     "duration_hours": round(duration, 1),
                     "severity": severity,
-                    "message": generate_alert_message(device_name, duration, severity),
+                    "message": generate_alert_message(canonical_name, duration, severity),
                     "first_detected": first_timestamp.isoformat(),
                     "last_seen": last_timestamp.isoformat(),
                     "power_watts": float(active_records["power_watts"].mean()),

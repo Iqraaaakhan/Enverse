@@ -575,10 +575,10 @@ def explain_prediction(payload: Dict[str, Any] = Body(...)):
 def get_alerts():
     """
     Returns active alerts for devices running continuously.
-    Uses test dataset for alert demonstrations.
+    Uses production data (energy_usage.csv) for both local and live.
     """
-    test_csv_path = BASE_DIR / "data" / "energy_usage_test.csv"
-    return get_active_alerts(csv_path=str(test_csv_path))
+    prod_csv_path = BASE_DIR / "data" / "energy_usage.csv"
+    return get_active_alerts(csv_path=str(prod_csv_path))
 
 
 @app.get("/api/alerts/test")
