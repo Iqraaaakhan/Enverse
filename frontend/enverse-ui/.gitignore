@@ -35,3 +35,9 @@ backend/app/ml/model_metrics.json
 
 .vercel
 .env*.local
+
+# Python virtual environment
+venv/
+venv_new/
+.env
+__pycache__/
