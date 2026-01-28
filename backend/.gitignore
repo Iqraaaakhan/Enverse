@@ -21,10 +21,11 @@ app/ml/models/
 # Data: Only track energy_usage.csv, ignore all else
 data/*
 !data/energy_usage.csv
+
 # Explicitly ignore all other CSVs
 data/appliance_energy_log.csv
 data/nilm_training_data.csv
-data/smart_home_energy_usage_dataset.csv
+
 # Ignore hidden and temp files
 data/.*
 # Ignore scripts
@@ -39,3 +40,6 @@ data/*.webp
 data/*.csv.backup
 data/*.localbackup.csv
 data/*_test.csv
+
+.venv_new
+.venv
