@@ -1,3 +1,4 @@
+# --- Trigger redeploy: trivial comment for Railway ---
 import sys
 import math
 import datetime
@@ -575,7 +576,7 @@ def explain_prediction(payload: Dict[str, Any] = Body(...)):
 def get_alerts():
     """
     Returns active alerts for devices running continuously.
-    Uses production data (energy_usage.csv) for both local and live.
+    Uses production dataset (energy_usage.csv) for live notifications.
     """
     prod_csv_path = BASE_DIR / "data" / "energy_usage.csv"
     return get_active_alerts(csv_path=str(prod_csv_path))
