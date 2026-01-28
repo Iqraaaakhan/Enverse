@@ -32,20 +32,12 @@ def generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
 def send_otp_email(recipient_email: str, otp: str) -> bool:
-    """Send OTP via SendGrid if configured, else fallback to SMTP if available."""
-
+    """Send OTP via SendGrid (live) if configured, else fallback to SMTP (local/dev)."""
     # Read env at call time to avoid stale values
     sendgrid_api_key = os.getenv("SENDGRID_API_KEY", "").strip()
     sender_email = os.getenv("SENDER_EMAIL", "").strip()
 
-    # SMTP fallback variables
-    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = os.getenv("SMTP_PORT", "587")
-    smtp_user = os.getenv("SMTP_USER", "")
-    smtp_pass = os.getenv("SMTP_PASS", "")
-    smtp_sender = os.getenv("SMTP_SENDER", smtp_user)
-
-    # 1️⃣ Try SendGrid if configured
+    # 1️⃣ LIVE: Try SendGrid if configured and available
     if sendgrid_api_key and sender_email and SENDGRID_AVAILABLE:
         try:
             print(f"📤 Attempting to send OTP to {recipient_email} via SendGrid...")
@@ -66,6 +58,7 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
                 </html>
                 """
             )
+            print(f"🔗 Connecting to SendGrid API...")
             sg = SendGridAPIClient(sendgrid_api_key)
             response = sg.send(message)
             print(f"📨 SendGrid API response status: {response.status_code}")
@@ -85,47 +78,54 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
             print("="*60 + "\n")
             # Fallback to SMTP if SendGrid fails
 
-    # 2️⃣ Fallback to SMTP if all vars present
-    if all([smtp_host, smtp_port, smtp_user, smtp_pass, smtp_sender]):
-        try:
-            print(f"📤 Attempting to send OTP to {recipient_email} via SMTP...")
-            import smtplib
-            from email.mime.text import MIMEText
-            from email.mime.multipart import MIMEMultipart
-            msg = MIMEMultipart()
-            msg['From'] = smtp_sender
-            msg['To'] = recipient_email
-            msg['Subject'] = "Your Enverse Login Code"
-            html = f"""
-                <html>
-                <body style='font-family: Arial, sans-serif; padding: 20px;'>
-                    <h2>Your Enverse Login Code</h2>
-                    <div style='background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center;'>
-                        <span style='font-size: 32px; font-weight: bold; letter-spacing: 8px;'>{otp}</span>
-                    </div>
-                    <p>This code expires in 10 minutes.</p>
-                </body>
-                </html>
-            """
-            msg.attach(MIMEText(html, 'html'))
-            with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(smtp_sender, recipient_email, msg.as_string())
-            print(f"✅ SUCCESS: OTP email sent to {recipient_email} via SMTP")
-            print("="*60 + "\n")
-            return True
-        except Exception as e:
-            import traceback
-            print(f"❌ EXCEPTION during SMTP send: {type(e).__name__}")
-            print(f"❌ Unable to send OTP to {recipient_email}")
-            print(f"📋 Error message: {str(e)[:300]}")
-            print(f"📋 Full traceback:\n{traceback.format_exc()}")
-            print("="*60 + "\n")
-            return False
+    # 2️⃣ LOCAL: Fallback to SMTP if SendGrid not configured or fails
+    smtp_user = os.getenv("SMTP_USER", "").strip()
+    smtp_pass = os.getenv("SMTP_PASS", "").strip()
+    smtp_sender = os.getenv("SMTP_SENDER", smtp_user).strip()
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com").strip()
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
 
-    print(f"❌ No email provider configured. Check your .env for SendGrid or SMTP settings.")
-    return False
+    if not smtp_user or not smtp_pass:
+        print(f"❌ SMTP NOT CONFIGURED - Check .env for SMTP_USER and SMTP_PASS")
+        print(f"❌ Unable to send OTP to {recipient_email}")
+        return False
+
+    try:
+        print(f"📤 Attempting to send OTP to {recipient_email} via SMTP...")
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        msg = MIMEMultipart()
+        msg["From"] = smtp_sender
+        msg["To"] = recipient_email
+        msg["Subject"] = "Your Enverse Login Code"
+        html = f"""
+        <html>
+        <body style='font-family: Arial, sans-serif; padding: 20px;'>
+            <h2>Your Enverse Login Code</h2>
+            <div style='background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center;'>
+                <span style='font-size: 32px; font-weight: bold; letter-spacing: 8px;'>{otp}</span>
+            </div>
+            <p>This code expires in 10 minutes.</p>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html, "html"))
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_sender, recipient_email, msg.as_string())
+        print(f"✅ SUCCESS: OTP email sent to {recipient_email} via SMTP")
+        print("="*60 + "\n")
+        return True
+    except Exception as e:
+        import traceback
+        print(f"❌ EXCEPTION during SMTP send: {type(e).__name__}")
+        print(f"❌ Unable to send OTP to {recipient_email}")
+        print(f"📋 Error message: {str(e)[:300]}")
+        print(f"📋 Full traceback:\n{traceback.format_exc()}")
+        print("="*60 + "\n")
+        return False
 
 def create_jwt_token(email: str) -> str:
     """Create JWT token for authenticated user"""
