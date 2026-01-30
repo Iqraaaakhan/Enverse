@@ -1,3 +1,23 @@
+# Python virtual environments
+venv_new/
+backend/venv/
+__pycache__/
+*.pyc
+
+# Node modules and build/deploy caches
+frontend/enverse-ui/node_modules/
+frontend/enverse-ui/.vercel/
+frontend/enverse-ui/.tmp/
+frontend/enverse-ui/.vite/
+frontend/enverse-ui/.vite-temp/
+
+# macOS system files
+.DS_Store
+
+# Environment files
+.env
+.env.*
+!.env.example
 node_modules/
 venv/
 .venv/
