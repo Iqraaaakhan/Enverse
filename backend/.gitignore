@@ -1,41 +1,63 @@
+########################
 # Environment variables
+########################
 .env
+.env.*
+!.env.example
 
+########################
 # Python
+########################
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Virtual environments
 venv/
+venv_new/
 env/
 ENV/
+backend/venv/
 
-# IDE
+########################
+# Node / Frontend
+########################
+frontend/enverse-ui/node_modules/
+frontend/enverse-ui/.vercel/
+frontend/enverse-ui/.tmp/
+frontend/enverse-ui/.vite/
+frontend/enverse-ui/.vite-temp/
+
+########################
+# IDE / Editor
+########################
 .vscode/
 .idea/
 *.swp
 
-# Models
+########################
+# macOS
+########################
+.DS_Store
+
+########################
+# ML Models
+########################
 app/ml/models/
 
-# Data: Only track energy_usage.csv, ignore all else
+########################
+# Data policy
+# Track ONLY energy_usage.csv
+########################
 data/*
 !data/energy_usage.csv
-# Explicitly ignore all other CSVs
-data/appliance_energy_log.csv
-data/nilm_training_data.csv
-data/smart_home_energy_usage_dataset.csv
-# Ignore hidden and temp files
-data/.*
-# Ignore scripts
+
+# Ignore data scripts & junk
 data/*.py
-# Ignore images/screenshots
-data/*.png
-data/*.jpg
-data/*.jpeg
-data/*.gif
-data/*.webp
-# Ignore backups and test files
-data/*.csv.backup
-data/*.localbackup.csv
+data/.*
+
+# Ignore non-prod datasets
 data/*_test.csv
+data/*.backup
+data/*.localbackup.csv
