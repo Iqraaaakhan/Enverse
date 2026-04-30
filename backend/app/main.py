@@ -122,7 +122,6 @@ def health_check():
 # -------------------------------------------------------------------
 
 
-
 # Database will be initialized lazily on first auth request
 _db_initialized = False
 
@@ -147,7 +146,8 @@ class VerifyOTPRequest(BaseModel):
 @app.post("/auth/send-otp")
 async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     """Send OTP to user email"""
-    print("\n" + "="*60)
+    print("
+" + "="*60)
     print("📧 /auth/send-otp endpoint called")
     print("="*60)
     
@@ -244,33 +244,32 @@ def verify_token(token: str = Body(..., embed=True)):
 # TEST ENDPOINT - Demo/Testing Only (Remove after college demo)
 # ---
 
-@app.get("/auth/test-get-otp")
-def test_get_otp(email: str):
-    """
-    TEST ENDPOINT FOR COLLEGE DEMO ONLY
-    
-    Since Railway blocks SMTP ports, this endpoint returns the OTP 
-    that was just generated. Use only for demo testing.
-    
-    ⚠️ DELETE THIS ENDPOINT before production deployment
-    """
-    ensure_db_initialized()
-    
-    # Get the last OTP from database
-    otp = get_last_otp(email)
-    
-    if not otp:
-        return {
-            "success": False,
-            "message": "No OTP found. Please request one first.",
-            "otp": None
-        }
-    
-    return {
-        "success": True,
-        "message": "OTP retrieved (DEMO ONLY - Remove endpoint after demo)",
-        "otp": otp
-    }
+# @app.get("/auth/test-get-otp")
+# def test_get_otp(email: str):
+#     """TEST ENDPOINT FOR COLLEGE DEMO ONLY
+#     
+#     Since Railway blocks SMTP ports, this endpoint returns the OTP 
+#     that was just generated. Use only for demo testing.
+#     
+#     ⚠️ DELETE THIS ENDPOINT before production deployment
+#     """
+#     ensure_db_initialized()
+#     
+#     # Get the last OTP from database
+#     otp = get_last_otp(email)
+#     
+#     if not otp:
+#         return {
+#             "success": False,
+#             "message": "No OTP found. Please request one first.",
+#             "otp": None
+#         }
+#     
+#     return {
+#         "success": True,
+#         "message": "OTP retrieved (DEMO ONLY - Remove endpoint after demo)",
+#         "otp": otp
+#     }
 
 
 # -------------------------------------------------------------------
@@ -327,11 +326,9 @@ def realtime_forecast():
 # -------------------------------------------------------------------
 # Energy Forecast Endpoint (FIXED)
 # -------------------------------------------------------------------
-
 @app.get("/energy/forecast")
 def energy_forecast():
-    """
-    Energy forecast endpoint with defensive error handling for college demo.
+    """Energy forecast endpoint with defensive error handling for college demo.
     Returns valid response structure even if ML model encounters issues.
     """
     try:
@@ -344,7 +341,7 @@ def energy_forecast():
             **json_safe(forecast),
             "explanations": forecast.get("ai_observations", [])
         }
-    
+        
     except Exception as e:
         # Log the error for debugging
         print(f"❌ Forecast error during demo: {e}")
@@ -360,7 +357,6 @@ def energy_forecast():
 # -------------------------------------------------------------------
 # NLP Chat (LLM-Powered with Per-Session Isolation)
 # -------------------------------------------------------------------
-
 @app.post("/chat")
 def chat_endpoint(query: ChatQuery):
     # Import locally - only loads when user actually chats
@@ -375,13 +371,10 @@ def chat_endpoint(query: ChatQuery):
 # -------------------------------------------------------------------
 # What-If Analysis
 # -------------------------------------------------------------------
-
 # ... imports ...
-
 @app.post("/api/estimate-energy")
 def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
-    """
-    What-if energy estimation with defensive error handling for college demo.
+    """What-if energy estimation with defensive error handling for college demo.
     """
     try:
         from app.services.predictor import EnergyPredictor
@@ -407,7 +400,7 @@ def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
             "calculation_method": result["method"],
             "reason": result["reason"]
         }
-    
+        
     except Exception as e:
         # Log error for debugging
         print(f"❌ Energy estimation error during demo: {e}")
@@ -423,11 +416,9 @@ def estimate_energy_api(payload: Dict[str, Any] = Body(...)):
 # -------------------------------------------------------------------
 # 🔥 AI INSIGHTS (MATHEMATICALLY CORRECT)
 # -------------------------------------------------------------------
-
 @app.get("/energy/ai-insights")
 def ai_insights():
-    """
-    Returns structured insight objects.
+    """Returns structured insight objects.
     ✅ FIXED: Uses Daily Rate Comparison (kWh/day) to handle partial periods correctly.
     """
     
@@ -470,8 +461,7 @@ def ai_insights():
                 
                 if not current_window_df.empty:
                     curr_days = max((current_window_df["timestamp"].max() - current_window_df["timestamp"].min()).days, 1)
-                    curr_daily_rate = total_energy / curr_days
-                    
+                    curr_daily_rate = total_energy / curr_days                    
                     # C. Compare Rates (110% threshold)
                     # This correctly flags high intensity even if data is sparse
                     status = "high" if curr_daily_rate > (hist_daily_rate * 1.1) else "normal"
@@ -509,7 +499,6 @@ def ai_insights():
 # -------------------------------------------------------------------
 # AI Timeline (Clean Costing)
 # -------------------------------------------------------------------
-
 @app.get("/energy/ai-timeline")
 def ai_energy_timeline():
     # REUSE the calculator logic to ensure 100% match with dashboard
@@ -552,7 +541,6 @@ def ai_energy_timeline():
 # -------------------------------------------------------------------
 # MLOps / Evaluation Endpoint
 # -------------------------------------------------------------------
-
 @app.get("/api/model-health")
 def model_health():
     return get_latest_metrics()
@@ -561,7 +549,6 @@ def model_health():
 # -------------------------------------------------------------------
 # Explainability Endpoint
 # -------------------------------------------------------------------
-
 @app.post("/api/explain/prediction")
 def explain_prediction(payload: Dict[str, Any] = Body(...)):
     from app.services.explainability_service import explain_prediction_shap
@@ -571,21 +558,17 @@ def explain_prediction(payload: Dict[str, Any] = Body(...)):
 # -------------------------------------------------------------------
 # Smart Alert System
 # -------------------------------------------------------------------
-
 @app.get("/api/alerts")
 def get_alerts():
-    """
-    Returns active alerts for devices running continuously.
+    """Returns active alerts for devices running continuously.
     Uses production dataset (energy_usage.csv) for live notifications.
     """
     prod_csv_path = BASE_DIR / "data" / "energy_usage.csv"
     return get_active_alerts(csv_path=str(prod_csv_path))
 
-
 @app.get("/api/alerts/test")
 def get_alerts_test():
-    """
-    TEST ENDPOINT - Demonstrates alert behavior with demo dataset.
+    """TEST ENDPOINT - Demonstrates alert behavior with demo dataset.
     Uses energy_usage_test.csv with recent timestamps and continuous usage.
     
     ⚠️ FOR DEMONSTRATION ONLY - Does not affect production data
@@ -600,4 +583,3 @@ def get_alerts_test():
         }
     
     return get_active_alerts(csv_path=str(test_csv_path))
-
