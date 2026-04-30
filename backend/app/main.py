@@ -251,7 +251,6 @@ def verify_token(token: str = Body(..., embed=True)):
 #     Since Railway blocks SMTP ports, this endpoint returns the OTP 
 #     that was just generated. Use only for demo testing.
 #     
-#     ⚠️ DELETE THIS ENDPOINT before production deployment
 #     """
 #     ensure_db_initialized()
 #     
