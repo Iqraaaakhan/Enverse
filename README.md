@@ -1,106 +1,102 @@
+ # Enverse - Energy Intelligence Platform
 
+AI-powered appliance-level energy tracking with LLM-driven natural language
+insights
 
-# Enverse - Energy Intelligence Platform
+Quick Start
 
-> AI-powered appliance-level energy tracking with LLM insights
-
-## Quick Start
-
-### Local Development
+Local Development
 
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-export GOOGLE_API_KEY="your_key"
-uvicorn app.main:app --reload
 
-# Frontend
-cd frontend/enverse-ui
-npm install
-npm run dev
-```
+Backend
 
-### Deploy to Production
+cd backend pip install -r requirements.txt cp .env.example .env # Add your API
+keys uvicorn app.main:app --reload
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide.
+Frontend
 
-**Quick Deploy (Railway + Vercel):**
+cd frontend/enverse-ui npm install npm run dev ```
 
-1. **Backend:** Connect repo to Railway → Add `GOOGLE_API_KEY` env variable
-2. **Frontend:** Connect repo to Vercel → Add `VITE_API_URL` env variable pointing to Railway backend
+Environment Variables
 
-Both platforms auto-deploy from GitHub commits.
+Backend
 
-## Environment Variables
+```env GROQ_API_KEY=your_groq_api_key SENDGRID_API_KEY=your_sendgrid_api_key
+SENDER_EMAIL=your_verified_sender_email JWT_SECRET=your_jwt_secret_key ```
 
-### Backend
-```env
-GOOGLE_API_KEY=your_google_gemini_api_key
-```
+Frontend
 
-### Frontend
-```env
-VITE_API_URL=http://127.0.0.1:8000  # Local
-# VITE_API_URL=https://your-backend.railway.app  # Production
-```
+```env VITE_API_URL=http://127.0.0.1:8000 # Local
 
-## Architecture
-
-- **Backend:** FastAPI (Python) - ML models, LLM chat, energy analytics
-- **Frontend:** React + TypeScript + Vite - Real-time dashboard
-- **ML:** XGBoost, Isolation Forest, NILM, SHAP explainability
-- **LLM:** Google Gemini (Groq Llama fallback) for natural language insights
-
-## Project Structure
+VITE_API_URL=https://your-app.railway.app  # Production
 
 ```
-Enverse/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI routes
-│   │   ├── services/            # Business logic
-│   │   └── ml/                  # ML models & training
-│   └── data/                    # CSV energy logs
-├── frontend/
-│   └── enverse-ui/
-│       └── src/
-│           ├── components/      # React components
-│           └── config/          # API configuration
-└── DEPLOYMENT.md                # Complete deployment guide
-```
 
-## Key Features
+Architecture
 
-- 📊 Real-time energy consumption tracking
-- 🤖 AI-powered appliance disaggregation (NILM)
-- 💬 Natural language chat for insights
-- 🔍 Anomaly detection (rule-based + ML)
-- 📈 Energy forecasting (tomorrow/next week)
-- 💡 Explainable AI (SHAP values)
-- 🔔 Smart alerts for unusual usage
+  - Backend: FastAPI (Python) — ML models, LLM chat, energy analytics, OTP auth
+  - Frontend: React + TypeScript + Vite — Real-time dashboard, charts, alert
+    notifications
+  - ML: XGBoost (forecasting + NILM), Isolation Forest (anomaly detection), SHAP
+    (explainability)
+  - LLM: Llama 3.3 via Groq API — natural language energy queries with
+    per-session conversation memory
+  - Auth: OTP-based login via SendGrid + JWT tokens
 
-## Deployment Status
+Project Structure
 
-✅ Production-ready configurations:
-- Docker (multi-stage builds)
-- Railway (backend)
-- Vercel (frontend)
-- Traditional VPS
+``` Enverse/ ├── backend/ │ ├── app/ │ │ ├── main.py # FastAPI routes │ │ ├──
+services/ # Business logic │ │ │ ├── llm_service.py │ │ │ ├── alert_service.py │
+│ │ ├── forecast_service.py │ │ │ ├── anomaly_detector.py │ │ │ └──
+auth_service.py │ │ └── ml/ # ML models & training │ │ ├── train_forecast.py │ │
+├── train_nilm_model.py │ │ └── train_anomaly_model.py │ ├── auth_db.py # SQLite
+OTP & user store │ └── data/ # Energy CSV logs ├── frontend/ │ └── enverse-ui/ │
+└── src/ │ ├── components/ # React components │ ├── pages/ # Login page │ └──
+config/ # API configuration └── README.md ```
 
-## API Endpoints
+Key Features
 
-- `GET /dashboard` - All metrics
-- `GET /health` - System status
-- `POST /chat` - LLM chat
-- `GET /energy/forecast` - Predictions
-- `GET /energy/ai-insights` - AI-generated insights
-- `POST /api/estimate-energy` - What-if analysis
+  - 📊 Real-time appliance-level energy tracking
+  - 🤖 NILM disaggregation — identifies individual device consumption from
+    aggregate data
+  - 💬 Natural language chat (Llama 3.3 via Groq) with per-session conversation
+    memory
+  - 🔍 Anomaly detection — Isolation Forest ML
 
-## License
+  - rule-based fallback
 
-Proprietary - Enverse Energy Intelligence Platform
+  - 📈 7-day recursive energy forecasting (XGBoost)
+  - 💡 SHAP explainability for model predictions
+  - 🔔 Smart alerts — continuous device monitoring with Web Audio API
+    notifications
+  - 🔐 OTP-based passwordless auth + JWT sessions
 
-## Support
+ML Model Performance
 
-For deployment issues, see [DEPLOYMENT.md](DEPLOYMENT.md) troubleshooting section.
+| Model                      | Dataset                      | R² Score | MAE                    |
+| -------------------------- | ---------------------------- | -------- | ---------------------- |
+| Energy Forecast XGBoost    | Kaggle Home Data (80/20)     | 0.9971   | 0.0346                 |
+| NILM Disaggregator XGBoost | Appliance Signatures (75/25) | 0.9975   | 0.0409                 |
+| Isolation Forest           | Unsupervised Time-Series     | —        | 97% variance explained |
+
+Deployment
+
+  - Backend: Railway (auto-deploy from GitHub)
+  - Frontend: Vercel (auto-deploy from GitHub)
+
+API Endpoints
+
+| Method | Endpoint             | Description                  |
+| ------ | -------------------- | ---------------------------- |
+| GET    | /dashboard           | All energy metrics           |
+| GET    | /health              | System status                |
+| POST   | /chat                | LLM natural language query   |
+| GET    | /energy/forecast     | 7-day XGBoost prediction     |
+| GET    | /energy/ai-insights  | Pattern recognition insights |
+| GET    | /api/alerts          | Active device alerts         |
+| POST   | /api/estimate-energy | What-if analysis             |
+| GET    | /api/model-health    | ML model metrics             |
+| POST   | /auth/send-otp       | Send login OTP               |
+| POST   | /auth/verify-otp     | Verify OTP + get JWT         |
+
