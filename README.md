@@ -14,7 +14,6 @@ A full-stack energy intelligence platform that turns time-series energy usage da
 ---
 
 ## Screenshots
-> Add your best 8–10 screenshots under these headings (same structure as your LinkedIn). Replace the placeholders with images/GIFs.
 
 ### 1) Live Energy Intelligence Dashboard
 - **[ADD SCREENSHOT]** KPI cards + device breakdown + usage summary
