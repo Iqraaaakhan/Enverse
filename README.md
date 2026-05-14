@@ -1,8 +1,4 @@
 
-## 🔒 Examiner-Safe Version
-
-The tag `examiner-safe-v1` represents the final, verified, viva-safe state of ENVERSE.
-All evaluations and demonstrations should be performed using this version.
 
 # Enverse - Energy Intelligence Platform
 
