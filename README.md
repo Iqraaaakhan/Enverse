@@ -1,7 +1,6 @@
  # Enverse - Energy Intelligence Platform
 
-AI-powered appliance-level energy tracking with LLM-driven natural language
-insights
+AI-integrated full-stack energy intelligence platform for appliance-level analytics, forecasting, anomaly detection, & natural language insights powered by LLMs.
 
 Quick Start
 
