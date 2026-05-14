@@ -2,36 +2,42 @@
 
 AI-integrated full-stack energy intelligence platform for appliance-level analytics, forecasting, anomaly detection, & natural language insights powered by LLMs.
 
-Quick Start
+## Quick Start
 
-Local Development
+### Backend
 
 ```bash
-
-Backend
-
-cd backend pip install -r requirements.txt cp .env.example .env # Add your API
-keys uvicorn app.main:app --reload
-
-Frontend
-
-cd frontend/enverse-ui npm install npm run dev ```
-
-Environment Variables
-
-Backend
-
-```env GROQ_API_KEY=your_groq_api_key SENDGRID_API_KEY=your_sendgrid_api_key
-SENDER_EMAIL=your_verified_sender_email JWT_SECRET=your_jwt_secret_key ```
-
-Frontend
-
-```env VITE_API_URL=http://127.0.0.1:8000 # Local
-
-VITE_API_URL=https://your-app.railway.app  # Production
-
+cd backend
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload
 ```
 
+### Frontend
+
+```bash
+cd frontend/enverse-ui
+npm install
+npm run dev
+```
+## Environment Variables
+
+### Backend
+
+```env
+GROQ_API_KEY=your_groq_api_key
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDER_EMAIL=your_verified_sender_email
+JWT_SECRET=your_jwt_secret_key
+```
+
+### Frontend
+
+```env
+VITE_API_URL=http://127.0.0.1:8000
+# Production:
+# VITE_API_URL=https://your-app.railway.app
+```
 Architecture
 
   - Backend: FastAPI (Python) — ML models, LLM chat, energy analytics, OTP auth
@@ -45,15 +51,30 @@ Architecture
 
 Project Structure
 
-``` Enverse/ ├── backend/ │ ├── app/ │ │ ├── main.py # FastAPI routes │ │ ├──
-services/ # Business logic │ │ │ ├── llm_service.py │ │ │ ├── alert_service.py │
-│ │ ├── forecast_service.py │ │ │ ├── anomaly_detector.py │ │ │ └──
-auth_service.py │ │ └── ml/ # ML models & training │ │ ├── train_forecast.py │ │
-├── train_nilm_model.py │ │ └── train_anomaly_model.py │ ├── auth_db.py # SQLite
-OTP & user store │ └── data/ # Energy CSV logs ├── frontend/ │ └── enverse-ui/ │
-└── src/ │ ├── components/ # React components │ ├── pages/ # Login page │ └──
-config/ # API configuration └── README.md ```
+## Project Structure
 
+```txt
+Enverse/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── services/
+│   │   │   ├── llm_service.py
+│   │   │   ├── forecast_service.py
+│   │   │   ├── anomaly_detector.py
+│   │   │   └── auth_service.py
+│   │   └── ml/
+│   │       ├── train_forecast.py
+│   │       ├── train_nilm_model.py
+│   │       └── train_anomaly_model.py
+│   ├── auth_db.py
+│   └── data/
+├── frontend/
+│   └── enverse-ui/
+│       └── src/
+├── docker-compose.yml
+└── README.md
+```
 Key Features
 
   - 📊 Real-time appliance-level energy tracking
