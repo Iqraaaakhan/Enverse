@@ -16,7 +16,8 @@ A full-stack energy intelligence platform that turns time-series energy usage da
 ## Screenshots
 
 ### 1) Live Energy Intelligence Dashboard
-- **[ADD SCREENSHOT]** KPI cards + device breakdown + usage summary
+- **[ADD SCREENSHOT] ![Uploading Screenshot 2026-02-13 at 10.41.18 PM.png…]()
+ ** KPI cards + device breakdown + usage summary
 
 ### 2) Energy Consumption Forecasting
 - **[ADD SCREENSHOT]** Recursive short-horizon energy forecasting and bill projection using XGBoost time-series models.
