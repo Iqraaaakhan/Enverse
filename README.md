@@ -2,6 +2,11 @@
 
 AI-integrated full-stack energy intelligence platform for appliance-level analytics, forecasting, anomaly detection, & natural language insights powered by LLMs.
 
+## Live Demo
+
+🎥 Project Demo:
+https://drive.google.com/file/d/10_RpEICfhTN9pnwdEslEIWD_MWbElFfi/view?usp=drive_link
+
 ## Quick Start
 
 ### Backend
@@ -48,6 +53,12 @@ Architecture
   - LLM: Llama 3.3 via Groq API — natural language energy queries with
     per-session conversation memory
   - Auth: OTP-based login via SendGrid + JWT tokens
+
+## Deployment
+
+- Frontend deployed using Vercel
+- Backend deployed using Railway
+- End-to-end application workflow demonstrated in the project demo video
 
 Project Structure
 
