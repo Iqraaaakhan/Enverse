@@ -17,34 +17,49 @@ A full-stack energy intelligence platform that turns time-series energy usage da
 > Images live in `docs/screenshots/`.
 
 ### 1) Secure Authentication (OTP-based login)
+Passwordless OTP authentication flow using email verification and JWT session handling.
+
 ![Secure Authentication](docs/screenshots/01-login.png)
 
 ### 2) Live Energy Intelligence Dashboard
+Central dashboard showing total load, NILM disaggregation, live device distribution, and real-time system insights.
+
 ![Live Energy Intelligence Dashboard](docs/screenshots/02-dashboard.png)
 
-### 3) Intelligent AI Insights
+### 3) Intelligent AI Insights Console
+AI-generated energy insights, behavioral summaries, and historical consumption analysis.
+
 ![Intelligent AI Insights](docs/screenshots/03-intelligent-console.png)
 
 ### 4) Machine Learning Pipeline Monitoring
+Model health dashboard for NILM estimation, XGBoost forecasting, and Isolation Forest anomaly detection metrics.
+
 ![Machine Learning Pipeline Monitoring](docs/screenshots/04-ml-pipeline.png)
 
 ### 5) Appliance-Level Energy Distribution
+Interactive analytics visualizing appliance contribution, estimated billing impact, and household consumption patterns.
+
 ![Appliance-Level Energy Distribution](docs/screenshots/05-appliance-level-energy-distribution.png)
 
 ### 6) Appliance Deep-Dive Analysis (Device Drawer)
+Detailed per-device analytics with efficiency scoring, usage signatures, trend tracking, and AI-generated insights.
+
 ![Appliance Deep-Dive Analysis](docs/screenshots/06-appliance-deep-dive.png)
 
 ### 7) LLM-Powered Energy Assistant (Groq)
+Natural-language AI assistant for multilingual energy queries, consumption analysis, and smart recommendations.
+
 ![LLM-Powered Energy Assistant](docs/screenshots/07-llm-assistant.png)
 
 ### 8) Energy Consumption Forecasting
+Short-term and rolling time-series forecasting with projected energy usage and estimated bill simulation.
+
 ![Energy Consumption Forecasting](docs/screenshots/08-forecast.png)
 
 ### 9) AI-Based Anomaly Detection (System Security)
-![AI-Based Anomaly Detection](docs/screenshots/09-ai-anomaly-detection.png)
+Isolation Forest-based anomaly detection engine identifying abnormal appliance behavior and unusual power spikes.
 
-### 10) Mobile-Responsive UI (Cross-Device Support)
-![Mobile-Responsive UI](docs/screenshots/10-mobile-responsive.png)
+![AI-Based Anomaly Detection](docs/screenshots/09-ai-anomaly-detection.png)
 
 ---
 
@@ -124,6 +139,7 @@ VITE_API_URL=http://127.0.0.1:8000
 ## Deployment
 - Frontend deployed using **Vercel**
 - Backend deployed using **Railway**
+- Local/dev deployment supported via **Docker** (`docker-compose.yml`)
 - End-to-end application workflow demonstrated in the **project demo video** (see **Demo** section above)
 
 ---
