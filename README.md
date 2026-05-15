@@ -29,19 +29,19 @@ A full-stack energy intelligence platform that turns time-series energy usage da
 ![Machine Learning Pipeline Monitoring](docs/screenshots/04-ml-pipeline.png)
 
 ### 5) Appliance Deep-Dive Analysis (Device Drawer)
-![Appliance Deep-Dive Analysis](docs/screenshots/05-appliance-deep-dive.png)
+![Appliance Deep-Dive Analysis](docs/screenshots/06-appliance-deep-dive.png)
 
 ### 6) AI-Based Anomaly Detection (System Security)
 ![AI-Based Anomaly Detection](docs/screenshots/09-ai-anomaly-detection.png)
 
 ### 7) Energy Consumption Forecasting + Impact Simulator
-![Energy Consumption Forecasting](docs/screenshots/07-forecast.png)
+![Energy Consumption Forecasting](docs/screenshots/08-forecast.png)
 
 ### 8) LLM-Powered Energy Assistant (Groq)
-![LLM-Powered Energy Assistant](docs/screenshots/08-llm-assistant.png)
+![LLM-Powered Energy Assistant](docs/screenshots/07-llm-assistant.png)
 
 ### 9) Mobile-Responsive UI (Cross-Device Support)
-![Mobile-Responsive UI](docs/screenshots/09-mobile-responsive.png)
+![Mobile-Responsive UI](docs/screenshots/10-mobile-responsive.png)
 
 ---
 
