@@ -32,7 +32,7 @@ A full-stack energy intelligence platform that turns time-series energy usage da
 ![Appliance Deep-Dive Analysis](docs/screenshots/05-appliance-deep-dive.png)
 
 ### 6) AI-Based Anomaly Detection (System Security)
-![AI-Based Anomaly Detection](docs/screenshots/06-security-alerts.png)
+![AI-Based Anomaly Detection](docs/screenshots/09-ai-anomaly-detection.png)
 
 ### 7) Energy Consumption Forecasting + Impact Simulator
 ![Energy Consumption Forecasting](docs/screenshots/07-forecast.png)
