@@ -2,7 +2,7 @@
 
 A full-stack energy intelligence platform that turns time-series energy usage data into **appliance-level insights**, **forecasts**, **anomaly alerts**, and a **natural-language energy assistant**.
 
-**Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • SHAP • Groq API (Llama 3.3)
+**Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • Groq API (Llama 3.3)
 
 > **Live dashboard (API-driven):** the UI is powered by backend APIs with refresh-based fetching (not streaming/WebSockets).
 
@@ -156,7 +156,6 @@ VITE_API_URL=http://127.0.0.1:8000
 | POST   | `/api/estimate-energy` | What-if estimation |
 | GET    | `/api/alerts` | Active device alerts |
 | GET    | `/api/model-health` | Latest model metrics |
-| POST   | `/api/explain/prediction` | SHAP explainability |
 
 ---
 
