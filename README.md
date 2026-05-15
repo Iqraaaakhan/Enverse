@@ -167,6 +167,11 @@ VITE_API_URL=http://127.0.0.1:8000
 
 ---
 
+## Dataset
+
+Dataset derived from publicly available household energy consumption datasets from Kaggle. Processed datasets used for forecasting, anomaly detection, and supervised appliance-level energy estimation are stored under `backend/data/`.
+
+
 ## Project structure
 ```txt
 Enverse/
