@@ -14,25 +14,34 @@ A full-stack energy intelligence platform that turns time-series energy usage da
 ---
 
 ## Screenshots
+> Images live in `docs/screenshots/`.
 
-### 1) Live Energy Intelligence Dashboard
-- **[ADD SCREENSHOT] ![Uploading Screenshot 2026-02-13 at 10.41.18 PM.png…]()
- ** KPI cards + device breakdown + usage summary
+### 1) Secure Authentication (OTP-based login)
+![Secure Authentication](docs/screenshots/01-login.png)
 
-### 2) Energy Consumption Forecasting
-- **[ADD SCREENSHOT]** Recursive short-horizon energy forecasting and bill projection using XGBoost time-series models.
+### 2) Live Energy Intelligence Dashboard
+![Live Energy Intelligence Dashboard](docs/screenshots/02-dashboard.png)
 
-### 3) AI-Based Anomaly Detection + Alerts
-- **[ADD SCREENSHOT]** Hybrid anomaly detection using Isolation Forest and defensive fallback logic to identify abnormal usage spikes and suspicious energy patterns.
+### 3) Intelligent AI Insights
+![Intelligent AI Insights](docs/screenshots/03-intelligent-console.png)
 
-### 4) LLM-Powered Energy Assistant (Chat)
-- **[ADD SCREENSHOT]** Natural-language assistant using Groq with local fallback responses for common energy/bill queries.
+### 4) Machine Learning Pipeline Monitoring
+![Machine Learning Pipeline Monitoring](docs/screenshots/04-ml-pipeline.png)
 
-### 5) Appliance Deep-Dive Analytics
-- **[ADD SCREENSHOT]** Per-appliance trends + cost impact / distribution
+### 5) Appliance Deep-Dive Analysis (Device Drawer)
+![Appliance Deep-Dive Analysis](docs/screenshots/05-appliance-deep-dive.png)
 
-### 6) Machine Learning Pipeline Monitoring
-- **[ADD SCREENSHOT]** Training/evaluation metrics and model health
+### 6) AI-Based Anomaly Detection (System Security)
+![AI-Based Anomaly Detection](docs/screenshots/06-security-alerts.png)
+
+### 7) Energy Consumption Forecasting + Impact Simulator
+![Energy Consumption Forecasting](docs/screenshots/07-forecast.png)
+
+### 8) LLM-Powered Energy Assistant (Groq)
+![LLM-Powered Energy Assistant](docs/screenshots/08-llm-assistant.png)
+
+### 9) Mobile-Responsive UI (Cross-Device Support)
+![Mobile-Responsive UI](docs/screenshots/09-mobile-responsive.png)
 
 ---
 
