@@ -2,7 +2,7 @@
 
 A full-stack energy intelligence platform that turns time-series energy usage data into **appliance-level insights**, **forecasts**, **anomaly alerts**, and a **natural-language energy assistant**.
 
-**Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • SHAP • Groq (LLM)
+**Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • SHAP • Groq API (Llama 3.3)
 
 > **Live dashboard (API-driven):** the UI is powered by backend APIs with refresh-based fetching (not streaming/WebSockets).
 
