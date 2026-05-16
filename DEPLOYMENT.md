@@ -17,268 +17,99 @@ All hardcoded URLs have been replaced with environment variables:
 
 1. **Push code to GitHub**
    ```bash
-   git add .
-   git commit -m "Prepare for deployment"
-   git push origin main
-   ```
+  # Enverse Deployment Guide
 
-2. **Deploy to Railway**
-   - Go to [railway.app](https://railway.app)
-   - Click "New Project" → "Deploy from GitHub repo"
-   - Select your repository
-   - Railway auto-detects `railway.json`
-   - Add environment variables:
-     ```
-     GOOGLE_API_KEY=your_gemini_api_key
-     SENDER_EMAIL=your-email@gmail.com
-     SENDER_PASSWORD=your-gmail-app-password
-     SMTP_SERVER=smtp.gmail.com
-     SMTP_PORT=587
-     JWT_SECRET=your-random-secret-key
-     ```
-   - **For Gmail:** Enable 2FA → Generate app password at https://myaccount.google.com/apppasswords
-   - Deploy automatically starts
+  ## Recommended Free Setup
 
-3. **Get Backend URL**
-   - Railway provides URL: `https://enverse-backend-xxxxx.railway.app`
-   - Test: `curl https://your-backend-url/health`
+  Frontend: Vercel
 
-#### **Frontend on Vercel**
+  Backend: Render Web Service
 
-1. **Deploy to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Click "Import Project" → Select repo
-   - Set root directory: `frontend/enverse-ui`
-   - Vercel auto-detects Vite config
+  This is the simplest free-tier path for a recruiter-facing demo and matches the current codebase changes.
 
-2. **Add Environment Variable**
-   - In Vercel dashboard → Settings → Environment Variables
-   - Add: `VITE_API_URL=https://your-backend-url.railway.app`
-   - Redeploy
+  ---
 
-3. **Update Backend CORS**
-   - In `backend/app/main.py`, replace:
-     ```python
-     allow_origins=["*"]
-     ```
-     with:
-     ```python
-     allow_origins=["https://your-frontend.vercel.app"]
-     ```
-   - Commit and push (Railway auto-redeploys)
+  ## 1) Backend on Render
 
----\
-  -e GOOGLE_API_KEY=your_key \
-  -e SENDER_EMAIL=your-email@gmail.com \
-  -e SENDER_PASSWORD=your-app-password \
- 
+  ### Render service settings
 
-### **Option 2: Docker + Any Cloud**
+  - `Name`: `enverse-backend`
+  - `Environment`: `Python 3`
+  - `Root Directory`: `backend`
+  - `Build Command`: `pip install -r requirements.txt`
+  - `Start Command`: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
-#### **Build Images**
+  ### Backend environment variables
 
-```bash
-# Backend
-docker build -f Dockerfile.backend -t enverse-backend .
-docker run -p 8000:8000 -e GOOGLE_API_KEY=your_key enverse-backend
+  ```env
+  GOOGLE_API_KEY=your_google_gemini_api_key
+  GROQ_API_KEY=your_groq_api_key
+  JWT_SECRET=your_random_secret_key
+  SENDER_EMAIL=your_email@gmail.com
+  SENDER_PASSWORD=your_gmail_app_password
+  SMTP_SERVER=smtp.gmail.com
+  SMTP_PORT=587
+  FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
+  AUTH_DB_PATH=/tmp/auth.db
+  ```
 
-# Frontend
-docker build -f Dockerfile.frontend -t enverse-frontend .
-docker run -p 80:80 enverse-frontend
-```
+  ### Deploy steps
 
-#### **Deploy to:**
-- **AWS ECS/Fargate**: Use ECR for image registry
-- **Google Cloud Run**: `gcloud run deploy`
-- **DigitalOcean App Platform**: Connect GitHub repo
-- **Fly.io**: `fly deploy`
+  1. Push the repo to GitHub.
+  2. Create a new Render Web Service from the repo.
+  3. Set the root directory to `backend`.
+  4. Paste the environment variables above.
+  5. Deploy and copy the public Render URL.
 
----
+  ---
 
-### **Option 3: Traditional VPS (Ubuntu)**
+  ## 2) Frontend on Vercel
 
-```bash
-# SSH into server
-ssh user@your-server-ip
+  ### Vercel settings
 
-# Clone repo
-git clone https://github.com/yourusername/enverse.git
-cd enverse
+  - `Root Directory`: `frontend/enverse-ui`
+  - `Build Command`: default Vercel/Vite build is fine
+  - `Output Directory`: `dist`
 
-# Backend setup
-cd backend
-export SENDER_EMAIL=your-email@gmail.com
-export SENDER_PASSWORD=your-app-password
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-export GOOGLE_API_KEY=your_key
+  ### Frontend environment variable
 
-# Run with systemd
-sudo nano /etc/systemd/system/enverse-backend.service
-```
+  ```env
+  VITE_API_URL=https://your-render-backend.onrender.com
+  ```
 
-**Systemd service file:**
-```ini
-[Unit]
-Description=Enverse Backend API
-After=network.target
+  ### Deploy steps
 
-[Service]
-User=ubuntu
-WorkingDirectory=/home/ubuntu/enverse/backend
-Environment="GOOGLE_API_KEY=your_key"
-ExecStart=/home/ubuntu/enverse/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
-Restart=always
+  1. Open the Vercel project.
+  2. Add `VITE_API_URL` using the Render backend URL.
+  3. Redeploy the frontend.
 
-[Install]
-WantedBy=multi-user.target
-```
+  ---
 
-```bash
-sudo systemctl start enverse-backend
-sudo systemctl enable enverse-backend
+  ## 3) Local verification
 
-# Frontend setup
-cd ../frontend/enverse-ui
-npm install
-npm run build
+  ```bash
+  cd backend && set -a && source .env && set +a && uvicorn app.main:app --host 127.0.0.1 --port 8000
+  ```
 
-# Serve with Nginx
-sudo cp -r dist/* /var/www/html/
-```
+  ```bash
+  cd frontend/enverse-ui && npm run dev -- --host 127.0.0.1 --port 5173
+  ```
 
----
+  Then open `http://127.0.0.1:5173` and verify login reaches the backend.
 
-## 🔐 Environment Variables
+  ---
 
-### **Backend**
-```env
-GOOGLE_API_KEY=your_google_gemini_api_key
-PORT=8000  # Optional
-CORS_ORIGINS=https://your-frontend.com  # Optional
-```
+  ## 4) Post-deployment checks
 
-### **Frontend**
-```env
-VITE_API_URL=https://your-backend-url.com
-```
+  ```bash
+  curl https://your-render-backend.onrender.com/health
+  curl https://your-render-backend.onrender.com/dashboard
+  ```
 
----
+  ---
 
-## 🧪 Post-Deployment Testing
+  ## Notes
 
-```bash
-# Test backend health
-curl https://your-backend-url/health
-
-# Test dashboard endpoint
-curl https://your-backend-url/dashboard
-
-# Test frontend
-open https://your-frontend-url
-```
-
----
-
-## 🔧 Troubleshooting
-
-### **CORS Errors**
-- Verify `VITE_API_URL` in Vercel env variables
-- Check `allow_origins` in `backend/app/main.py`
-
-### **API Key Not Found**
-- Ensure `GOOGLE_API_KEY` is set in Railway env variables
-- Restart backend service after adding
-
-### **404 on API Calls**
-- Confirm frontend is using correct `VITE_API_URL`
-- Check browser console for actual URL being called
-
-### **ML Models Missing**
-- Ensure `backend/app/ml/models/` directory exists
-- Models are generated on first run (may take time)
-
----
-
-## 📊 Monitoring
-
-**Railway:**
-- Built-in logs and metrics
-- Set up alerts for downtime
-
-**Vercel:**
-- Analytics dashboard
-- Function logs
-
-**Custom:**
-- Add Sentry for error tracking
-- Use Uptime Robot for availability monitoring
-
----
-
-## 🔄 CI/CD Setup (Optional)
-
-**GitHub Actions example:**
-
-```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Railway
-        run: railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Vercel
-        run: vercel --prod
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-```
-
----
-
-## 📝 Production Checklist
-
-- [ ] Replace `allow_origins=["*"]` with specific domains
-- [ ] Set `GOOGLE_API_KEY` in production
-- [ ] Configure `VITE_API_URL` in frontend env
-- [ ] Enable HTTPS (Vercel/Railway do this automatically)
-- [ ] Test all endpoints after deployment
-- [ ] Set up monitoring/alerts
-- [ ] Configure custom domain (optional)
-- [ ] Enable rate limiting (optional)
-- [ ] Add authentication middleware (optional)
-
----
-
-## 🎯 Estimated Deployment Time
-
-- **Railway + Vercel**: ~10 minutes
-- **Docker**: ~30 minutes (includes image builds)
-- **VPS**: ~1 hour (includes server setup)
-
----
-
-## 💰 Cost Estimates
-
-| Platform | Backend | Frontend | Total/Month |
-|----------|---------|----------|-------------|
-| Railway + Vercel | $5 | Free | $5 |
-| DigitalOcean | $6 | $6 | $12 |
-| AWS (t3.small) | ~$15 | $1 (S3) | $16 |
-
----
-
-**Need help?** Open an issue or check Railway/Vercel documentation.
+  - Keep `FRONTEND_ORIGIN` set to the exact Vercel domain.
+  - Keep `AUTH_DB_PATH=/tmp/auth.db` for Render.
+  - The auth DB is SQLite-backed, so it is fine for a portfolio demo but not durable storage.
