@@ -148,6 +148,20 @@ def ensure_db_initialized():
         except Exception as e:
             print(f"⚠️ Database error: {e}")
 
+def send_otp_email_background(email: str, otp: str):
+    """Send OTP without blocking the request/health-check event loop."""
+    print(f"📤 Sending OTP email in background for {email}...")
+    try:
+        email_sent = send_otp_email(email, otp)
+        if email_sent:
+            print(f"✅ Background email send completed successfully for {email}")
+        else:
+            print(f"⚠️ Background email send returned False for {email}")
+    except Exception as email_error:
+        print(f"❌ Exception in background send_otp_email: {email_error}")
+        import traceback
+        print(f"📋 Traceback:\n{traceback.format_exc()}")
+
 class SendOTPRequest(BaseModel):
     email: str
 
@@ -183,22 +197,11 @@ async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     except Exception as db_error:
         print(f"❌ Database error storing OTP: {db_error}")
         return {"success": False, "message": "Failed to process request"}
-    
-    # Send email synchronously for debugging (will show errors immediately)
-    print(f"📤 Calling send_otp_email synchronously for debugging...")
-    try:
-        email_sent = send_otp_email(email, otp)
-        if email_sent:
-            print(f"✅ Email send completed successfully")
-        else:
-            print(f"⚠️ Email send returned False - check logs above")
-    except Exception as email_error:
-        print(f"❌ Exception in send_otp_email: {email_error}")
-        import traceback
-        print(f"📋 Traceback:\n{traceback.format_exc()}")
+
+    background_tasks.add_task(send_otp_email_background, email, otp)
+    print(f"✅ OTP email queued for background delivery")
     print("="*60 + "\n")
     
-    # Return instantly without waiting for email
     return {
         "success": True,
         "message": "Login code sent to your email. Check spam folder if not received.",

@@ -111,7 +111,7 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
         </html>
         """
         msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_sender, recipient_email, msg.as_string())
