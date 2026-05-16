@@ -3,15 +3,15 @@
  * Centralized endpoint management for all API calls
  * 
  * IMPORTANT: 
- * - For local dev: VITE_API_URL=http://127.0.0.1:8000 in .env
- * - For production: Set VITE_API_URL in the deployment platform
+ * - Default backend: https://enverse-backend.onrender.com
+ * - For local dev: override VITE_API_URL in an untracked .env.local file
  */
 
-const DEV_URL = "http://127.0.0.1:8000";
+const DEFAULT_API_URL = "https://enverse-backend.onrender.com";
 const API_URL_FROM_ENV = import.meta.env.VITE_API_URL?.trim();
 
-// Use the configured backend URL, fallback to local development only.
-export const API_BASE_URL = API_URL_FROM_ENV || DEV_URL;
+// Use the configured backend URL, falling back to Render.
+export const API_BASE_URL = API_URL_FROM_ENV || DEFAULT_API_URL;
 
 /**
  * Construct full API endpoint URL

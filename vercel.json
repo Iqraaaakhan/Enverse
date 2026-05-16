@@ -1,4 +1,9 @@
 {
   "buildCommand": "cd frontend/enverse-ui && npm install && npm run build",
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://enverse-backend.onrender.com"
+    }
+  },
   "outputDirectory": "frontend/enverse-ui/dist"
 }

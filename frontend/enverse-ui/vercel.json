@@ -1,5 +1,10 @@
 {
   "buildCommand": "npm run build",
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://enverse-backend.onrender.com"
+    }
+  },
   "outputDirectory": "dist",
   "framework": "vite",
   "headers": [
