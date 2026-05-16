@@ -79,8 +79,8 @@ def send_otp_email(recipient_email: str, otp: str) -> bool:
             # Fallback to SMTP if SendGrid fails
 
     # 2️⃣ LOCAL: Fallback to SMTP if SendGrid not configured or fails
-    smtp_user = os.getenv("SMTP_USER", "").strip()
-    smtp_pass = os.getenv("SMTP_PASS", "").strip()
+    smtp_user = os.getenv("SMTP_USER", os.getenv("SENDER_EMAIL", "")).strip()
+    smtp_pass = os.getenv("SMTP_PASS", os.getenv("SENDER_PASSWORD", "")).strip()
     smtp_sender = os.getenv("SMTP_SENDER", smtp_user).strip()
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com").strip()
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
