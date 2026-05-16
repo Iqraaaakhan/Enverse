@@ -119,11 +119,12 @@ npm run dev
 # LLM (chat assistant)
 GROQ_API_KEY=your_groq_api_key
 
-# OTP email (SMTP)
-SENDER_EMAIL=your-email@gmail.com
-SENDER_PASSWORD=your-app-password
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
+# OTP email (SendGrid API)
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDER_EMAIL=your-verified-sender@example.com
+
+# Optional SMTP fallback for local/dev only
+SMTP_FALLBACK_ENABLED=false
 
 # JWT
 JWT_SECRET=your-random-secret

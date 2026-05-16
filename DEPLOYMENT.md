@@ -45,10 +45,9 @@ All hardcoded URLs have been replaced with environment variables:
   GOOGLE_API_KEY=your_google_gemini_api_key
   GROQ_API_KEY=your_groq_api_key
   JWT_SECRET=your_random_secret_key
-  SENDER_EMAIL=your_email@gmail.com
-  SENDER_PASSWORD=your_gmail_app_password
-  SMTP_SERVER=smtp.gmail.com
-  SMTP_PORT=587
+  SENDGRID_API_KEY=your_sendgrid_api_key
+  SENDER_EMAIL=your_verified_sendgrid_sender_email
+  SMTP_FALLBACK_ENABLED=false
   FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
   AUTH_DB_PATH=/tmp/auth.db
   ```
@@ -112,4 +111,6 @@ All hardcoded URLs have been replaced with environment variables:
 
   - Keep `FRONTEND_ORIGIN` set to the exact Vercel domain.
   - Keep `AUTH_DB_PATH=/tmp/auth.db` for Render.
+  - Use SendGrid API for OTP email on Render. Render free web services block outbound SMTP ports `25`, `465`, and `587`, so Gmail SMTP should remain disabled there.
+  - Verify `SENDER_EMAIL` in SendGrid before testing OTP delivery.
   - The auth DB is SQLite-backed, so it is fine for a portfolio demo but not durable storage.
