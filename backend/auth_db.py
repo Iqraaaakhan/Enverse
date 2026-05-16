@@ -3,15 +3,20 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-# Database path - Railway-aware
-# If running on Railway (volume mounted at /app/storage), use that path
-# Otherwise use local development path
-if os.getenv("RAILWAY_ENVIRONMENT"):
+# Database path - configurable for local development and hosted environments
+db_path_override = os.getenv("AUTH_DB_PATH", "").strip()
+if db_path_override:
+    DB_PATH = Path(db_path_override)
+elif os.getenv("RAILWAY_ENVIRONMENT"):
     DB_PATH = Path("/app/storage/auth.db")
-    # Ensure storage directory exists
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+elif os.getenv("K_SERVICE"):
+    # Cloud Run provides writable ephemeral storage under /tmp.
+    DB_PATH = Path("/tmp/auth.db")
 else:
     DB_PATH = Path(__file__).parent / "auth.db"
+
+# Ensure the parent directory exists for whichever path is active.
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 def init_db():
     """Initialize SQLite database with users and OTP tables"""

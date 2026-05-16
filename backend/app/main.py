@@ -80,20 +80,32 @@ app = FastAPI(
 
 # CORS Configuration
 # Explicit origins required when using allow_credentials=True
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://enverse-blue.vercel.app",
-        "https://enverse-git-main-iqraaaakhan.vercel.app",
-        "https://enverse-jb4deepe4-iqraaaakhan.vercel.app",
-        # Allow all Vercel preview deployments for college demo testing
-        "https://*.vercel.app",
-        # Local development
+def _load_cors_origins():
+    origins = {
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://127.0.0.1:8000",
-        "http://127.0.0.1:5173"
-    ],
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    }
+
+    frontend_origin = os.getenv("FRONTEND_ORIGIN", "").strip()
+    if frontend_origin:
+        origins.add(frontend_origin)
+
+    extra_origins = os.getenv("CORS_ORIGINS", "")
+    if extra_origins:
+        origins.update(
+            origin.strip()
+            for origin in extra_origins.split(",")
+            if origin.strip()
+        )
+
+    return sorted(origins)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_load_cors_origins(),
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -146,8 +158,7 @@ class VerifyOTPRequest(BaseModel):
 @app.post("/auth/send-otp")
 async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     """Send OTP to user email"""
-    print("
-" + "="*60)
+    print("\n" + "="*60)
     print("📧 /auth/send-otp endpoint called")
     print("="*60)
     
