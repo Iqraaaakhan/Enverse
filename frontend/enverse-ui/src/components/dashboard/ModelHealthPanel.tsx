@@ -36,7 +36,7 @@ const MODEL_CONFIG: Record<string, { title: string; type: string; desc: string; 
   "Energy Forecast XGBoost": {
     title: "Core Inference Engine",
     type: "XGBoost Regressor",
-    desc: "High-precision real-time load estimation.",
+    desc: "High-precision API-driven load estimation.",
     icon: Zap,
     color: "emerald"
   },
@@ -50,7 +50,7 @@ const MODEL_CONFIG: Record<string, { title: string; type: string; desc: string; 
   "Anomaly Detector": {
     title: "Grid Anomaly Sentinel",
     type: "Isolation Forest",
-    desc: "Unsupervised outlier detection stream.",
+    desc: "Unsupervised outlier detection pipeline.",
     icon: ShieldCheck,
     color: "rose"
   },

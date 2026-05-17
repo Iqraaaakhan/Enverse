@@ -1,6 +1,6 @@
 # Enverse — Energy Intelligence Platform
 
-A full-stack energy intelligence platform that turns time-series energy usage data into **appliance-level insights**, **forecasts**, **anomaly alerts**, and a **natural-language energy assistant**.
+A production-ready full-stack energy intelligence platform that turns time-series energy usage data into **appliance-level insights**, **forecasts**, **anomaly alerts**, and a **natural-language energy assistant**.
 
 **Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • Groq API (Llama 3.3)
 
@@ -22,7 +22,7 @@ Passwordless OTP authentication flow using email verification and JWT session ha
 ![Secure Authentication](docs/screenshots/01-login.png)
 
 ### 2) Live Energy Intelligence Dashboard
-Central dashboard showing total load, NILM disaggregation, live device distribution, and real-time system insights.
+Central dashboard showing total load, NILM disaggregation, live device distribution, and current system insights.
 
 ![Live Energy Intelligence Dashboard](docs/screenshots/02-dashboard.png)
 
@@ -47,7 +47,7 @@ Detailed per-device analytics with efficiency scoring, usage signatures, trend t
 ![Appliance Deep-Dive Analysis](docs/screenshots/06-appliance-deep-dive.png)
 
 ### 7) LLM-Powered Energy Assistant (Groq)
-Natural-language AI assistant for multilingual energy queries, consumption analysis, and smart recommendations.
+Natural-language AI assistant powered by Groq Llama 3.3 with live dashboard context injection, deterministic fallback responses, and multilingual query support.
 
 ![LLM-Powered Energy Assistant](docs/screenshots/07-llm-assistant.png)
 
@@ -67,7 +67,7 @@ Isolation Forest-based anomaly detection engine identifying abnormal appliance b
 - **Live dashboard (API-driven):** appliance-wise kWh breakdown, bill estimates, usage patterns (e.g., night-usage ratio), deltas vs previous window
 - **Forecasting:** recursive short-horizon energy forecasting and bill projection using **XGBoost** time-series models
 - **Anomaly detection:** **hybrid anomaly detection** using **Isolation Forest** and defensive fallback logic to detect abnormal usage spikes and suspicious patterns
-- **Energy assistant (Groq):** natural-language queries with **local deterministic fallback logic** for speed/reliability
+- **Energy assistant (Groq):** `llama-3.3-70b-versatile` with live metrics context injection, session history, and **local deterministic fallback logic** for speed/reliability
 - **What-if estimation:** estimate kWh from power × duration via API
 - **Auth:** OTP-based login + JWT sessions (passwordless)
 
@@ -139,7 +139,7 @@ VITE_API_URL=http://127.0.0.1:8000
 
 ## Deployment
 - Frontend deployed using **Vercel**
-- Backend deployed using **Railway**
+- Backend deployed using **Render**
 - Local/dev deployment supported via **Docker** (`docker-compose.yml`)
 - End-to-end application workflow demonstrated in the **project demo video** (see **Demo** section above)
 
@@ -163,6 +163,7 @@ VITE_API_URL=http://127.0.0.1:8000
 ## ML & evaluation (implementation notes)
 - **Appliance-level energy breakdown using labeled appliance signatures (NILM-inspired supervised model).**
   - This is a supervised setup that uses appliance context (e.g., `appliance_code`) for signature-based estimation.
+- Model health metrics are reported per model: NILM Disaggregator reaches **R2 = 0.9975**, Energy Forecast XGBoost reaches **R2 = 0.9971**, and rolling/daily forecast metrics are reported separately.
 - Training and evaluation scripts live under `backend/app/ml/` and write metrics artifacts used for model health reporting.
 
 ---

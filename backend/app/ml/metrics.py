@@ -9,7 +9,7 @@ METRICS_FILE = BASE_DIR / "metrics.json"
 
 def get_latest_metrics():
     """
-    Reads the real-time training metrics.
+    Reads the latest saved training metrics.
     Used by the Dashboard API to show Model Health.
     """
     if not METRICS_FILE.exists():

@@ -64,12 +64,6 @@ else
     echo "  ❌ Dockerfile.frontend missing!"
 fi
 
-if [ -f "railway.json" ]; then
-    echo "  ✅ Railway config exists"
-else
-    echo "  ⚠️  railway.json missing (optional)"
-fi
-
 if [ -f "frontend/enverse-ui/vercel.json" ]; then
     echo "  ✅ Vercel config exists"
 else
@@ -106,6 +100,6 @@ echo "1. Update .env files with production values"
 echo "2. Update CORS in backend/app/main.py for production domains"
 echo "3. Test locally: npm run dev (frontend) + uvicorn app.main:app (backend)"
 echo "4. Commit and push to GitHub"
-echo "5. Connect to Railway (backend) and Vercel (frontend)"
+echo "5. Connect to Render (backend) and Vercel (frontend)"
 echo ""
 echo "See DEPLOYMENT.md for detailed instructions."

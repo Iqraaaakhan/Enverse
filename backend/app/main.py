@@ -1,4 +1,4 @@
-# --- Trigger redeploy: trivial comment for Railway ---
+# --- Enverse API entrypoint ---
 import sys
 import math
 import datetime
@@ -262,7 +262,7 @@ def verify_token(token: str = Body(..., embed=True)):
 # def test_get_otp(email: str):
 #     """TEST ENDPOINT FOR COLLEGE DEMO ONLY
 #     
-#     Since Railway blocks SMTP ports, this endpoint returns the OTP 
+#     Since some hosted environments block SMTP ports, this endpoint returns the OTP
 #     that was just generated. Use only for demo testing.
 #     
 #     """
