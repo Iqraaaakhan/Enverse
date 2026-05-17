@@ -84,10 +84,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.01)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20"></div>
       </div>
 
-      <div className="relative w-full max-w-md z-10">
+      <div className="relative z-10 grid w-full max-w-md mx-auto justify-items-center">
         {/* Premium Logo/Brand with glow */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 mb-6 group">
+        <div className="w-full grid justify-items-center text-center mb-12">
+          <div className="grid grid-flow-col auto-cols-max items-center justify-center gap-3 mb-6 group">
             <div className="w-14 h-14 bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/40 group-hover:shadow-orange-500/60 transition-all duration-300 transform group-hover:scale-110">
               <Zap className="text-white" size={28} />
             </div>
@@ -97,7 +97,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* Main premium card with glow border */}
-        <div className="bg-white/[0.06] backdrop-blur-2xl border border-white/15 rounded-3xl p-8 sm:p-10 shadow-2xl relative group">
+        <div className="w-full bg-white/[0.06] backdrop-blur-2xl border border-white/15 rounded-3xl p-8 sm:p-10 shadow-2xl relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-sky-500/20 to-cyan-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500 -z-10"></div>
           
           <div className="relative">
@@ -199,6 +199,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     )}
                   </button>
 
+                  <p className="text-center text-xs font-medium text-slate-400/90 leading-relaxed">
+                    Didn't receive the OTP? Check your Spam/Junk folder.
+                  </p>
+
                   <button
                     onClick={() => setStep('email')}
                     className="w-full text-slate-400 hover:text-sky-300 text-sm transition-colors py-2 font-medium"
@@ -208,18 +212,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </div>
               </>
             )}
-          </div>
-        </div>
-
-        {/* Footer with badges */}
-        <div className="mt-8 text-center">
-          <p className="text-slate-400 text-xs font-medium mb-3">
-            🔒 Enterprise-grade security
-          </p>
-          <div className="flex justify-center gap-3 text-xs text-slate-500">
-            <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">Real-time</span>
-            <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">Secure</span>
-            <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">Passwordless</span>
           </div>
         </div>
       </div>
