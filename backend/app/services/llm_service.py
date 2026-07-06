@@ -6,6 +6,8 @@ from app.services.knowledge_base import get_live_metrics
 # --- CONFIGURATION ---
 load_dotenv()
 API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_FALLBACK_MODEL = os.getenv("GROQ_FALLBACK_MODEL", "openai/gpt-oss-20b")
 
 # Initialize Groq client
 client = Groq(api_key=API_KEY) if API_KEY else None
@@ -20,6 +22,7 @@ def get_local_response(query: str, data: dict):
     Expanded to cover: bill, savings, last month, devices.
     """
     q = query.lower().strip()
+    normalized_q = " ".join(q.split())
     
     # BILL QUERIES (Check first - more specific than greetings)
     if ("bill" in q or "cost" in q or "price" in q or "total" in q or "how much" in q):
@@ -75,8 +78,22 @@ def get_local_response(query: str, data: dict):
     if "least" in q or "lowest" in q or "bottom" in q:
         return f"The {data['bottom_device']} is your lowest consumer at {data['bottom_device_kwh']:.2f} kWh."
 
+    # MODEL IDENTITY
+    if (
+        "which model" in q
+        or "groq model" in q
+        or "ai model" in q
+        or "llm model" in q
+        or "what model" in q
+        or "which llm" in q
+    ):
+        return (
+            "Enverse uses Groq through backend configuration. "
+            f"The default configured model is {GROQ_MODEL}, with {GROQ_FALLBACK_MODEL} as fallback."
+        )
+
     # GREETING (Last - lowest priority)
-    if any(x == q or q.startswith(x) for x in ["hi", "hello", "hey", "start"]):
+    if normalized_q in {"hi", "hello", "hey", "start", "bismillah"}:
         return (
             f"Hello! I'm Enverse Assistant. \n"
             f"Your actual bill for the last 30 days is ₹{data['bill']:,}. \n"
@@ -98,6 +115,9 @@ RULES:
 3. Be concise and friendly.
 4. "Bill" = actual last 30 days. "Forecast" = predicted future (different page).
 5. Use bullet points for lists. Keep paragraphs short (2-3 sentences max).
+6. Reply in the user's language when they ask in Hindi, Urdu, Kannada, Marathi, Roman Hindi, or similar; keep the same helpful energy-advisor tone.
+7. If live dashboard data is available, do not give generic answers.
+8. If asked which model, Groq model, LLM, or AI model is being used, do not guess or invent names. Say Enverse uses Groq through backend configuration, with openai/gpt-oss-120b as the default configured model and openai/gpt-oss-20b as fallback.
 
 EXAMPLES:
 User: "Why is my bill high?"
@@ -110,6 +130,7 @@ You: "Let me check... Your AC consumed 299 kWh this month, costing approximately
 # --- 4. MAIN PROCESSOR ---
 
 def process_chat_message(user_message: str, session_id: str = "default"):
+    data = None
     try:
         data = get_live_metrics()
         if not data: return "System initializing..."
@@ -121,6 +142,7 @@ def process_chat_message(user_message: str, session_id: str = "default"):
 
         # 2. Try LLM (Groq)
         if not client:
+            print("Groq unavailable, using local summary.")
             return generate_fallback_summary(data)
 
         # Initialize session history
@@ -144,16 +166,32 @@ def process_chat_message(user_message: str, session_id: str = "default"):
         ]
         messages.extend(CHAT_SESSIONS[session_id])
         messages.append({"role": "user", "content": user_message})
-        
-        # Call Groq
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # Updated to current model
-            messages=messages,
-            temperature=0.7,
-            max_tokens=500
-        )
-        
-        assistant_reply = response.choices[0].message.content
+
+        def call_groq_model(model_name: str):
+            return client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=500
+            )
+
+        assistant_reply = None
+
+        try:
+            response = call_groq_model(GROQ_MODEL)
+            assistant_reply = response.choices[0].message.content
+        except Exception:
+            print("Groq primary model failed, using fallback.")
+            try:
+                response = call_groq_model(GROQ_FALLBACK_MODEL)
+                assistant_reply = response.choices[0].message.content
+            except Exception:
+                print("Groq unavailable, using local summary.")
+                return generate_fallback_summary(data)
+
+        if not assistant_reply:
+            print("Groq unavailable, using local summary.")
+            return generate_fallback_summary(data)
         
         # Update session history (keep last 10 messages)
         CHAT_SESSIONS[session_id].append({"role": "user", "content": user_message})
@@ -163,9 +201,11 @@ def process_chat_message(user_message: str, session_id: str = "default"):
         
         return assistant_reply
 
-    except Exception as e:
-        print(f"⚠️ LLM Error: {e}")
-        return generate_fallback_summary(data)
+    except Exception:
+        print("Groq unavailable, using local summary.")
+        if data:
+            return generate_fallback_summary(data)
+        return "System initializing..."
 
 def generate_fallback_summary(data):
     return (

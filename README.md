@@ -2,7 +2,7 @@
 
 A production-ready full-stack energy intelligence platform that turns time-series energy usage data into **appliance-level insights**, **forecasts**, **anomaly alerts**, and a **natural-language energy assistant**.
 
-**Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • Groq API (Llama 3.3)
+**Tech:** FastAPI (Python) • React + TypeScript + Vite • XGBoost • Isolation Forest • Groq API (configurable model)
 
 > **Live dashboard (API-driven):** the UI is powered by backend APIs with refresh-based fetching (not streaming/WebSockets).
 
@@ -47,7 +47,7 @@ Detailed per-device analytics with efficiency scoring, usage signatures, trend t
 ![Appliance Deep-Dive Analysis](docs/screenshots/06-appliance-deep-dive.png)
 
 ### 7) LLM-Powered Energy Assistant (Groq)
-Natural-language AI assistant powered by Groq Llama 3.3 with live dashboard context injection, deterministic fallback responses, and multilingual query support.
+Natural-language AI assistant powered by Groq with live dashboard context injection, deterministic fallback responses, and multilingual query support.
 
 ![LLM-Powered Energy Assistant](docs/screenshots/07-llm-assistant.png)
 
@@ -67,7 +67,7 @@ Isolation Forest-based anomaly detection engine identifying abnormal appliance b
 - **Live dashboard (API-driven):** appliance-wise kWh breakdown, bill estimates, usage patterns (e.g., night-usage ratio), deltas vs previous window
 - **Forecasting:** recursive short-horizon energy forecasting and bill projection using **XGBoost** time-series models
 - **Anomaly detection:** **hybrid anomaly detection** using **Isolation Forest** and defensive fallback logic to detect abnormal usage spikes and suspicious patterns
-- **Energy assistant (Groq):** `llama-3.3-70b-versatile` with live metrics context injection, session history, and **local deterministic fallback logic** for speed/reliability
+- **Energy assistant (Groq):** configurable current model with live metrics context injection, session history, and **local deterministic fallback logic** for speed/reliability
 - **What-if estimation:** estimate kWh from power × duration via API
 - **Auth:** OTP-based login + JWT sessions (passwordless)
 
@@ -118,6 +118,8 @@ npm run dev
 ```env
 # LLM (chat assistant)
 GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-120b
+GROQ_FALLBACK_MODEL=openai/gpt-oss-20b
 
 # OTP email (SendGrid API)
 SENDGRID_API_KEY=your-sendgrid-api-key
