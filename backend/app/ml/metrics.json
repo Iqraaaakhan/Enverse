@@ -50,5 +50,20 @@
             "MAE": 5.0377,
             "R2_Score": 0.0665
         }
+    },
+    "Daily Forecast XGBoost (Rolling CV)": {
+        "model": "Daily Forecast XGBoost (Rolling CV)",
+        "dataset": "Energy Usage (Daily Agg) - Rolling CV",
+        "timestamp": "2026-05-18 00:28:06",
+        "metrics": {
+            "R2_Mean": -0.5232,
+            "R2_STD": 0.3882,
+            "MAE_Mean": 7.1082,
+            "MAE_STD": 1.7334,
+            "RMSE_Mean": 8.2849,
+            "RMSE_STD": 1.9497,
+            "MAPE_Mean": 11.88,
+            "MAPE_STD": 3.13
+        }
     }
 }

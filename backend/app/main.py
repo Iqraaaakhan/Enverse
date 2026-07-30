@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Dict, Any
 
-from fastapi import FastAPI, Body, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Body, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd 
@@ -49,10 +49,6 @@ if str(PARENT_DIR) not in sys.path:
 from app.services.auth_service import generate_otp, send_otp_email, create_jwt_token, verify_jwt_token
 from app.services.data_loader import load_energy_data
 from app.services.billing_service import calculate_electricity_bill
-from app.services.energy_calculator import compute_dashboard_metrics
-from app.services.anomaly_detector import detect_anomalies
-from app.services.alert_service import get_active_alerts
-from app.ml.metrics import get_latest_metrics
 from auth_db import init_db, get_or_create_user, store_otp, verify_otp as verify_otp_db, get_last_otp
 
 # These will be imported locally inside functions when needed
@@ -148,20 +144,6 @@ def ensure_db_initialized():
         except Exception as e:
             print(f"⚠️ Database error: {e}")
 
-def send_otp_email_background(email: str, otp: str):
-    """Send OTP without blocking the request/health-check event loop."""
-    print(f"📤 Sending OTP email in background for {email}...")
-    try:
-        email_sent = send_otp_email(email, otp)
-        if email_sent:
-            print(f"✅ Background email send completed successfully for {email}")
-        else:
-            print(f"⚠️ Background email send returned False for {email}")
-    except Exception as email_error:
-        print(f"❌ Exception in background send_otp_email: {email_error}")
-        import traceback
-        print(f"📋 Traceback:\n{traceback.format_exc()}")
-
 class SendOTPRequest(BaseModel):
     email: str
 
@@ -170,7 +152,7 @@ class VerifyOTPRequest(BaseModel):
     otp: str
 
 @app.post("/auth/send-otp")
-async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
+async def send_otp(request: SendOTPRequest):
     """Send OTP to user email"""
     print("\n" + "="*60)
     print("📧 /auth/send-otp endpoint called")
@@ -190,16 +172,31 @@ async def send_otp(request: SendOTPRequest, background_tasks: BackgroundTasks):
     otp = generate_otp()
     print(f"🔑 Generated OTP: {otp} (6-digit code)")
     
-    # Store in database
+    # Send email first so the API only reports success after actual delivery handoff.
+    try:
+        email_sent = send_otp_email(email, otp)
+    except Exception as email_error:
+        print(f"❌ Email delivery exception for {email}: {email_error}")
+        email_sent = False
+
+    if not email_sent:
+        print(f"❌ OTP email failed for {email}")
+        print("="*60 + "\n")
+        return {
+            "success": False,
+            "message": "We could not send the login code right now. Please try again in a moment.",
+        }
+
+    # Store only after the email send succeeds.
     try:
         store_otp(email, otp, expires_in_minutes=10)
         print(f"✅ OTP stored in database for {email}")
     except Exception as db_error:
-        print(f"❌ Database error storing OTP: {db_error}")
+        print(f"❌ Database error storing OTP after successful email send: {db_error}")
+        print("="*60 + "\n")
         return {"success": False, "message": "Failed to process request"}
 
-    background_tasks.add_task(send_otp_email_background, email, otp)
-    print(f"✅ OTP email queued for background delivery")
+    print(f"✅ OTP email sent successfully for {email}")
     print("="*60 + "\n")
     
     return {
@@ -306,8 +303,16 @@ class ChatQuery(BaseModel):
 
 @app.get("/dashboard")
 def dashboard():
+    from app.services.energy_calculator import compute_dashboard_metrics
+
     metrics = compute_dashboard_metrics()
-    anomalies = detect_anomalies()
+    anomalies = []
+
+    try:
+        from app.services.anomaly_detector import detect_anomalies
+        anomalies = detect_anomalies()
+    except Exception as e:
+        print(f"⚠️ Dashboard anomaly detection unavailable in local run: {e}")
 
     return {
         **metrics,
@@ -434,6 +439,7 @@ def ai_insights():
     """Returns structured insight objects.
     ✅ FIXED: Uses Daily Rate Comparison (kWh/day) to handle partial periods correctly.
     """
+    from app.services.energy_calculator import compute_dashboard_metrics
     
     # 1. GET CURRENT OBSERVED DATA
     metrics = compute_dashboard_metrics()
@@ -515,6 +521,8 @@ def ai_insights():
 @app.get("/energy/ai-timeline")
 def ai_energy_timeline():
     # REUSE the calculator logic to ensure 100% match with dashboard
+    from app.services.energy_calculator import compute_dashboard_metrics
+
     metrics = compute_dashboard_metrics()
     
     if metrics["total_energy_kwh"] == 0:
@@ -556,6 +564,8 @@ def ai_energy_timeline():
 # -------------------------------------------------------------------
 @app.get("/api/model-health")
 def model_health():
+    from app.ml.metrics import get_latest_metrics
+
     return get_latest_metrics()
 
 
@@ -576,6 +586,8 @@ def get_alerts():
     """Returns active alerts for devices running continuously.
     Uses production dataset (energy_usage.csv) for live notifications.
     """
+    from app.services.alert_service import get_active_alerts
+
     prod_csv_path = BASE_DIR / "data" / "energy_usage.csv"
     return get_active_alerts(csv_path=str(prod_csv_path))
 
@@ -586,6 +598,8 @@ def get_alerts_test():
     
     ⚠️ FOR DEMONSTRATION ONLY - Does not affect production data
     """
+    from app.services.alert_service import get_active_alerts
+
     test_csv_path = BASE_DIR / "data" / "energy_usage_test.csv"
     
     if not test_csv_path.exists():

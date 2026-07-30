@@ -86,7 +86,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       <div className="relative z-10 grid w-full max-w-md mx-auto justify-items-center">
         {/* Premium Logo/Brand with glow */}
-        <div className="w-full grid justify-items-center text-center mb-12">
+        <div className="w-full grid justify-items-center text-center mb-12 sm:translate-x-3">
           <div className="grid grid-flow-col auto-cols-max items-center justify-center gap-3 mb-6 group">
             <div className="w-14 h-14 bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/40 group-hover:shadow-orange-500/60 transition-all duration-300 transform group-hover:scale-110">
               <Zap className="text-white" size={28} />
@@ -103,7 +103,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <div className="relative">
             {step === 'email' ? (
               <>
-                <div className="mb-8">
+                <div className="mb-8 text-center">
                   <h2 className="text-3xl font-black text-white mb-2">Welcome Back</h2>
                   <p className="text-slate-300 text-sm font-medium">Enter your email to receive a secure login code</p>
                 </div>
@@ -214,6 +214,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             )}
           </div>
         </div>
+
+        <p className="mt-5 text-center text-sm font-medium text-amber-200/90">
+          <span className="inline-flex max-w-full flex-col items-center rounded-full border border-amber-300/20 bg-amber-400/10 px-4 py-2 backdrop-blur-sm">
+            <span>First load may take up to a minute (free-tier hosting),</span>
+            <span>thanks for waiting!</span>
+          </span>
+        </p>
       </div>
     </div>
   );
