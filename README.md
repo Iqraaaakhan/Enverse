@@ -9,7 +9,7 @@ A production-ready full-stack energy intelligence platform that turns time-serie
 ---
 
 ## Demo
-- 🎥 **Video walkthrough:** [Click here to watch the full platform demo]([https://drive.google.com/file/d/10_RpEICfhTN9pnwdEslEIWD_MWbElFfi/view?usp=drive_link](https://drive.google.com/file/d/11mdMBIg8uhK1inOTAskm4gKwihiy2u6j/view?usp=drive_link))
+- 🎥 **Video walkthrough:** [Click here to watch the full platform demo] :- https://drive.google.com/file/d/11mdMBIg8uhK1inOTAskm4gKwihiy2u6j/view?usp=drive_link
 
 ---
 
